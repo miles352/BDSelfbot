@@ -64,10 +64,10 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.0.1",
+      "version": "1.1.0",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
-      "github_raw": ""
+      "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
     },
     "changelog": [{
         "title": "New Stuff",
@@ -80,7 +80,7 @@ const Selfbot = (() => {
       {
         "title": "Improvements",
         "type": "improved",
-        "items": ["Now supports almost all currency commands"]
+        "items": ["Refactered commands to work with the new setting menu"]
   }, {
         "title": "On-going",
         "type": "progress",
