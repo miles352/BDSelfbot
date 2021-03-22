@@ -220,11 +220,28 @@ const Selfbot = (() => {
       const EditMessage = BdApi.findModuleByProps("sendMessage").editMessage;
       const DeleteMessage = BdApi.findModuleByProps("sendMessage").deleteMessage;
       const FluxDispatcher = BdApi.findModuleByProps("subscribe");
+      let avatar;
+      let id;
+      let dankmemerOn = false;
       return class Selfbot extends Plugin {
 
-        onStart() {
+        async onStart() {
 
-          ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js");
+          const initialCheck = await fetch(`https://discord.com/api/v8/users/@me`, {
+            headers: {
+              authorization: this.settings.token,
+              "Content-Type": 'application/json'
+            },
+            method: "GET"
+          }).then(res => res.json());
+          if (initialCheck.message == "401: Unauthorized") {
+            BdApi.Plugins.disable("Selfbot")
+            BdApi.showToast('Invalid Token, please fix it in settings', { type: "error" });
+          } else {
+            BdApi.showToast("Token verified, you're good to go!", { type: "success" });
+            avatar = initialCheck.avatar;
+            id = initialCheck.id;
+          }
           // load settings
           const catApiKey = "ea42f3a5-746d-417f-be9f-1313c6b452f5";
 
@@ -248,7 +265,7 @@ const Selfbot = (() => {
             if (!embed.footer) {
               embed.footer = {
                 text: "Jefff-Cord",
-                icon_url: "https://cdn.discordapp.com/avatars/769415977439592468/41377a891a8c762d9dd40bcbdd8ffd5d.webp"
+                icon_url: `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp`
               }
             }
             if (!embed.color) {
@@ -285,7 +302,7 @@ const Selfbot = (() => {
             if (!embed.footer) {
               embed.footer = {
                 text: "Jefff-Cord",
-                icon_url: "https://cdn.discordapp.com/avatars/769415977439592468/41377a891a8c762d9dd40bcbdd8ffd5d.webp"
+                icon_url: `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp`
               }
             }
             if (!embed.color) {
@@ -429,7 +446,7 @@ const Selfbot = (() => {
                 path: `M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6 14h-12c.331 1.465 2.827 4 6.001 4 3.134 0 5.666-2.521 5.999-4zm0-3.998l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002zm-7 0l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002z`,
                 height: 24,
                 width: 24,
-                viewBox: "0 0 24 24"
+                viewBox: "0 0 24 24",
               },
               commands: [
                 {
@@ -443,7 +460,7 @@ const Selfbot = (() => {
                         if (Object.getOwnPropertyNames(catIds).includes(e.breed[0].text.toLowerCase())) {
                           breed = catIds[e.breed[0].text.toLowerCase()];
                         } else {
-                          throw "Invalid cat breed. You can find a list of valid breeds here: placetofindstuff"
+                          throw "Invalid cat breed. You can find a list of valid breeds here: https://thecatapi.com"
                         }
                       }
                       const data = await fetch(`https://api.thecatapi.com/v1/images/search?breed_ids=${breed}`, {
@@ -576,9 +593,16 @@ const Selfbot = (() => {
                 },
                 {
                   name: "farmcoins",
-                  description: "Farms dank memer coins/levels for you.",
+                  description: "Toggles the dank memer farmer",
                   options: [],
-                  execute: async function(e, t) {
+                  execute: async (e, t) => {
+                    if (dankmemerOn) {
+                      SendClyde(t.channel.id, "Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord")
+                      dankmemerOn = false;
+                      return
+                    }
+                    SendClyde(t.channel.id, "Dank Memer Farmer on");
+                    dankmemerOn = true;
 
                     const formatter = new Intl.NumberFormat();
 
@@ -587,10 +611,8 @@ const Selfbot = (() => {
                     }
 
                     const botId = "270904126974590976";
-                    const myId = "769415977439592468";
 
-                    const topbar = document.getElementsByClassName("typeWindows-1za-n7 withFrame-haYltI titleBar-AC4pGV horizontalReverse-3tRjY7 flex-1O1GKY directionRowReverse-m8IjIq justifyStart-2NDFzi alignStretch-DpGPf3 da-typeWindows da-withFrame da-titleBar da-horizontalReverse da-flex da-directionRowReverse da-justifyStart da-alignStretch")[0];
-                    const discordlogo = document.getElementsByClassName("wordmarkWindows-1v0lYD wordmark-2iDDfm da-wordmarkWindows da-wordmark")[0];
+                    const topbar = document.querySelector("#app-mount div.da-directionRowReverse")
 
                     let style = document.createElement('style');
                     style.type = 'text/css';
@@ -626,7 +648,7 @@ const Selfbot = (() => {
                     async function messageSent(...args) {
                       try {
                         const content = args[0].message.content;
-                        if (args[0].channelId == t.channel.id && args[0].message.author.id == botId && args[0].message.mentions[0].id == myId) {
+                        if (args[0].channelId == t.channel.id && args[0].message.author.id == botId && args[0].message.mentions[0].id == id) {
                           if (content.includes("Where do you want to search")) {
                             const thingToSearch = content.substring(content.lastIndexOf(",") + 3, content.lastIndexOf("`"));
                             SendMessage(t.channel.id, thingToSearch);
@@ -659,41 +681,67 @@ const Selfbot = (() => {
                     // Subscribe.
                     FluxDispatcher.subscribe("MESSAGE_CREATE", messageSent);
 
-
-                    while (true) {
-                      SendMessage(t.channel.id, "pls fish");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls hunt");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls beg");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls postmemes");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls search");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls hl");
-                      await wait(2000);
-                      SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls trivia");
-                      await wait(2000);
-                      SendMessage(t.channel.id, ["A", "B", "C", "D"][Math.floor(Math.random() * 4)]);
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls gamble 10");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls snakeeyes 10");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls slots 10");
-                      await wait(4000);
-                      SendMessage(t.channel.id, "pls bj 10");
-                      await wait(2000);
-                      SendMessage(t.channel.id, "s");
-                      await wait(2000);
-                      SendMessage(t.channel.id, "pls dep max");
-                      await wait(2000);
+                    while ((Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length !== 0) && dankmemerOn) {
+                      const commandsOn = Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length;
+                      let timeToWait = 50 / commandsOn * 1000;
+                      if (this.settings.dankmemer.fish) {
+                        SendMessage(t.channel.id, "pls fish");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.hunt) {
+                        SendMessage(t.channel.id, "pls hunt");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.beg) {
+                        SendMessage(t.channel.id, "pls beg");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.postmemes) {
+                        SendMessage(t.channel.id, "pls postmemes");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.search) {
+                        SendMessage(t.channel.id, "pls search");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.highlow) {
+                        SendMessage(t.channel.id, "pls hl");
+                        await wait(timeToWait);
+                        SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.trivia) {
+                        SendMessage(t.channel.id, "pls trivia");
+                        await wait(timeToWait);
+                        SendMessage(t.channel.id, ["A", "B", "C", "D"][Math.floor(Math.random() * 4)]);
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.gamble) {
+                        SendMessage(t.channel.id, "pls gamble 10");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.snakeeyes) {
+                        SendMessage(t.channel.id, "pls snakeeyes 10");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.slots) {
+                        SendMessage(t.channel.id, "pls slots 10");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.blackjack) {
+                        SendMessage(t.channel.id, "pls bj 10");
+                        await wait(timeToWait);
+                        SendMessage(t.channel.id, "s");
+                        await wait(timeToWait);
+                      }
+                      if (this.settings.dankmemer.deposit) {
+                        SendMessage(t.channel.id, "pls dep max");
+                        await wait(timeToWait);
+                      }
                     }
+                    SendClydeError(t.channel.id, "You need to enable atleast one dank memer command");
                   }
-                    }
+                }
                   ]
                 },
             {
@@ -813,16 +861,30 @@ const Selfbot = (() => {
 
         getSettingsPanel() {
           const panel = this.buildSettingsPanel();
-          // document.querySelector(".da-flex > button.bd-button").addEventListener("click", async () => {
-          //   const data = await fetch(`https://discord.com/api/v8/users/@me`, {
-          //     headers: {
-          //       authorization: this.settings.token,
-          //       "Content-Type": 'application/json'
-          //     },
-          //     method: "GET"
-          //   }).then(res => res.json());
-          //   console.log(data);
-          // })
+          let listener = false;
+          panel.addListener((...args) => {
+            if (args[0] == "token" && listener == false) {
+              listener = true;
+              document.querySelector(".da-flex > button.bd-button").addEventListener("click", async () => {
+
+                const data = await fetch(`https://discord.com/api/v8/users/@me`, {
+                  headers: {
+                    authorization: this.settings.token,
+                    "Content-Type": 'application/json'
+                  },
+                  method: "GET"
+                }).then(res => res.json());
+                if (data.message == "401: Unauthorized") {
+                  BdApi.Plugins.disable("Selfbot")
+                  BdApi.showToast('Invalid Token', { type: "error" });
+                } else {
+                  BdApi.showToast('Valid Token', { type: "success" });
+                  avatar = data.avatar;
+                  id = data.id;
+                }
+              })
+            }
+          })
           return panel.getElement();
         }
       };
