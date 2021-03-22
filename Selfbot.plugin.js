@@ -196,6 +196,7 @@ const Selfbot = (() => {
     getDescription() { return config.info.description; }
     getVersion() { return config.info.version; }
     load() {
+      ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js");
       BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
         confirmText: "Download Now",
         cancelText: "Cancel",
