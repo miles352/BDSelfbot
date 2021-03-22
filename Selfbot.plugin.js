@@ -64,20 +64,22 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
     },
-    "changelog": [{
-        "title": "New Stuff",
-        "items": ["Added settings", "Added changelog"]
-  }, /*{*/
-      // "title": "Bugs Squashed",
-      // "type": "fixed",
-      // "items": ["React errors on reload"]
-  /*},*/
+    "changelog": [
+      /*{
+              "title": "New Stuff",
+              "items": ["Added settings", "Added changelog"]
+        },*/
       {
+        "title": "Bugs Squashed",
+        "type": "fixed",
+        "items": ["Dank Memer not starting correctly, due to some people not having top bar of discord."]
+  },
+      /*{
         "title": "Improvements",
         "type": "improved",
         "items": ["Refactered commands to work with the new setting menu"]
@@ -85,7 +87,8 @@ const Selfbot = (() => {
         "title": "On-going",
         "type": "progress",
         "items": ["Pls work coming soon", "Pls trivia getting the answers correct coming soon"]
-  }],
+  }*/
+    ],
     "defaultConfig": [{
       "type": "textbox",
       "id": "token",
@@ -100,6 +103,12 @@ const Selfbot = (() => {
       "collapsible": true,
       "shown": false,
       "settings": [{
+        "type": "switch",
+        "id": "status",
+        "name": "Topbar Status",
+        "note": "Whether or not the top bar with the coins/minute and total coins counter is there",
+        "value": true
+      }, {
         "type": "switch",
         "id": "deposit",
         "name": "pls deposit max",
@@ -223,6 +232,8 @@ const Selfbot = (() => {
       let avatar;
       let id;
       let dankmemerOn = false;
+      let cpm;
+      let totalCoins;
       return class Selfbot extends Plugin {
 
         async onStart() {
@@ -597,9 +608,13 @@ const Selfbot = (() => {
                   options: [],
                   execute: async (e, t) => {
                     if (dankmemerOn) {
-                      SendClyde(t.channel.id, "Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord")
+                      SendClyde(t.channel.id, "Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord");
                       dankmemerOn = false;
-                      return
+                      if (document.contains(document.getElementById("dankmemer"))) {
+                        document.getElementById("dankmemer").parentNode.removeChild(document.getElementById("dankmemer"));
+                      }
+                      FluxDispatcher.unsubscribe("MESSAGE_CREATE", () => {});
+                      return;
                     }
                     SendClyde(t.channel.id, "Dank Memer Farmer on");
                     dankmemerOn = true;
@@ -612,40 +627,42 @@ const Selfbot = (() => {
 
                     const botId = "270904126974590976";
 
-                    const topbar = document.querySelector("#app-mount div.da-directionRowReverse")
+                    const topbar = document.querySelector("#app-mount div.da-directionRowReverse");
+                    if (topbar !== null) {
+                      let style = document.createElement('style');
+                      style.type = 'text/css';
+                      style.innerHTML = `
+                        .memerinfo {
+                          position: absolute;
+                          top: 0.52vh;
+                          left: 7vw;
+                          color: var(--text-muted);
+                          font-weight: bold;
+                          font-size: 13px;
+                        }
+                        .memerinfo > * {
+                          margin-right: 10px;
+                          display: inline-block;
+                        }
+                      `;
+                      document.getElementsByTagName('head')[0].appendChild(style);
 
-                    let style = document.createElement('style');
-                    style.type = 'text/css';
-                    style.innerHTML = `
-                      .memerinfo {
-                        position: absolute;
-                        top: 0.52vh;
-                        left: 7vw;
-                        color: var(--text-muted);
-                        font-weight: bold;
-                        font-size: 13px;
-                      }
-                      .memerinfo > * {
-                        margin-right: 10px;
-                        display: inline-block;
-                      }
-                    `;
-                    document.getElementsByTagName('head')[0].appendChild(style);
+                      const memerinfo = document.createElement("div");
+                      memerinfo.id = "dankmemer";
+                      memerinfo.className = "memerinfo";
 
-                    const memerinfo = document.createElement("div");
-                    memerinfo.className = "memerinfo";
+                      var amountDepositedElement = document.createElement("h1");
+                      memerinfo.appendChild(amountDepositedElement);
 
-                    const amountDepositedElement = document.createElement("h1");
-                    memerinfo.appendChild(amountDepositedElement);
+                      var totalMoneyElement = document.createElement("h1");
+                      memerinfo.appendChild(totalMoneyElement);
 
-                    const totalMoneyElement = document.createElement("h1");
-                    memerinfo.appendChild(totalMoneyElement);
-
-                    topbar.append(memerinfo);
+                      topbar.append(memerinfo);
+                    }
 
                     let amountsDeposited = [];
 
-                    async function messageSent(...args) {
+                    const messageSent = async (...args) => {
                       try {
                         const content = args[0].message.content;
                         if (args[0].channelId == t.channel.id && args[0].message.author.id == botId && args[0].message.mentions[0].id == id) {
@@ -660,17 +677,26 @@ const Selfbot = (() => {
                           } else if (content.includes("fish is too strong")) {
                             const fishWord = content.substring(content.lastIndexOf("Type ") + 6, content.lastIndexOf("`")).replace(/﻿/g, "");
                             SendMessage(t.channel.id, fishWord);
-                          } else if (content.includes("deposited, current bank balance is")) {
+                          } else if (content.includes("deposited, current bank balance is") && this.settings.dankmemer.deposit) {
                             const amountDeposited = content.substring(content.indexOf("⏣") + 2, content.indexOf("deposited") - 3).replace(/,/g, "");
                             amountsDeposited.push(parseInt(amountDeposited));
                             const averageAmountDeposited = average(amountsDeposited);
                             // calculate ratio from 50-60 seconds
-                            const perMinute = 60 * (averageAmountDeposited / 50);
+                            let perMinute = 60 * (averageAmountDeposited / 50);
+                            perMinute = `Average ⏣/minute: ⏣ ${formatter.format(perMinute)}`
+                            let totalMoney = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
+                            totalMoney = `Total Money: ⏣ ${formatter.format(totalMoney)}`
 
-                            amountDepositedElement.innerText = `Average ⏣/minute: ⏣ ${formatter.format(perMinute)}`;
+                            if ((topbar !== null) && (this.settings.dankmemer.status)) {
+                              console.log("doin it");
+                              amountDepositedElement.innerText = perMinute;
+                              totalMoneyElement.innerText = totalMoney;
+                            } else {
+                              console.log("not doin it");
+                              totalCoins = totalMoney;
+                              cpm = perMinute;
+                            }
 
-                            const totalMoney = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
-                            totalMoneyElement.innerText = `Total Money: ⏣ ${formatter.format(totalMoney)}`;
                           }
                         }
                       } catch {
@@ -739,11 +765,11 @@ const Selfbot = (() => {
                         await wait(timeToWait);
                       }
                     }
-                    SendClydeError(t.channel.id, "You need to enable atleast one dank memer command");
+                    if (Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length === 0) SendClydeError(t.channel.id, "You need to enable atleast one dank memer command");
                   }
-                }
-                  ]
-                },
+                        }
+                      ]
+                    },
             {
               name: "Backup",
               icon: {
@@ -822,8 +848,8 @@ const Selfbot = (() => {
                   }
                     }
                   ]
-                }
-              ]
+                    }
+                  ]
 
           // Insert all commands and "modules"/sections
           modules.forEach(module => {
