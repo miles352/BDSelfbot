@@ -64,7 +64,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": ""
@@ -196,7 +196,6 @@ const Selfbot = (() => {
     getDescription() { return config.info.description; }
     getVersion() { return config.info.version; }
     load() {
-      ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js");
       BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
         confirmText: "Download Now",
         cancelText: "Cancel",
@@ -224,6 +223,8 @@ const Selfbot = (() => {
       return class Selfbot extends Plugin {
 
         onStart() {
+
+          ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js");
           // load settings
           const catApiKey = "ea42f3a5-746d-417f-be9f-1313c6b452f5";
 
