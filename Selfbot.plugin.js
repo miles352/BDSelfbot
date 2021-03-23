@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.1.2",
+      "version": "1.1.3",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -28,11 +28,11 @@ const Selfbot = (() => {
         "title": "New Stuff",
         "items": ["Added a ton of shit I cant really remember", "Dank memer with some options off seems to break idk ill fix later"]
         },
-      /*
-            {
-              "title": "Bugs Squashed",
-              "type": "fixed",
-              "items": ["Dank Memer not starting correctly, due to some people not having top bar of discord."]
+
+      {
+        "title": "Bugs Squashed",
+        "type": "fixed",
+        "items": ["Hopefully fixes bug with status not showing"]
         },
             /*{
               "title": "Improvements",
@@ -614,7 +614,7 @@ const Selfbot = (() => {
 
                     const botId = "270904126974590976";
 
-                    if (this.settings.dankmemer.status) {
+                    if (this.settings.statusPosition.status) {
                       let style = document.createElement('style');
                       style.type = 'text/css';
                       style.innerHTML = `
