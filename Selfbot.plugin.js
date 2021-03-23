@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.1.3",
+      "version": "1.1.4",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -679,7 +679,7 @@ const Selfbot = (() => {
                             cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`
                             totalCoins = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
                             totalCoins = `Total Money: ⏣ ${formatter.format(totalCoins)}`
-                            if (this.settings.dankmemer.status) {
+                            if (this.settings.statusPosition.status) {
                               amountDepositedElement.innerText = cpm;
                               totalMoneyElement.innerText = totalCoins;
                             }
