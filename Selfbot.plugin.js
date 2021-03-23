@@ -8,52 +8,6 @@
  * @website https://jefff.dev
  */
 
-
-// module.exports = class Selfbot {
-//
-//   load() {
-//
-//
-//   }
-//
-//   start() {
-//     // for auto update
-//     //if (!global.ZeresPluginLibrary) return window.BdApi.alert("Library Missing", `The library plugin needed for this plugin is missing. Go download it here: https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js`);
-//     //ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "LINK_TO_RAW_CODE");
-//
-//     // Insert all commands and "modules"/sections
-//     modules.forEach(module => {
-//       SectionModule.push({
-//         id: `-${SectionModule.length + 1}`,
-//         name: module.name,
-//         type: 0
-//       })
-//       module.commands.forEach(command => {
-//         CommandsModule.push({
-//           id: `-${CommandsModule.length + 1}`,
-//           applicationId: `-${SectionModule.length}`,
-//           type: 0,
-//           name: command.name,
-//           description: command.description,
-//           options: command.options,
-//           execute: command.execute
-//         })
-//       })
-//     })
-//
-//   }
-//   stop() {
-//     CommandsModule.length = 8;
-//     SectionModule.length = 1;
-//     // // Unsubscribe.
-//     FluxDispatcher.unsubscribe("MESSAGE_CREATE", () => {});
-//   }
-//   //user subscribe for message logger
-//
-//
-//
-// }
-
 const Selfbot = (() => {
 
   let config = {
@@ -64,30 +18,31 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.1.1",
+      "version": "1.1.2",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
     },
     "changelog": [
-      /*{
-              "title": "New Stuff",
-              "items": ["Added settings", "Added changelog"]
-        },*/
       {
-        "title": "Bugs Squashed",
-        "type": "fixed",
-        "items": ["Dank Memer not starting correctly, due to some people not having top bar of discord."]
-  },
-      /*{
-        "title": "Improvements",
-        "type": "improved",
-        "items": ["Refactered commands to work with the new setting menu"]
-  }, {
-        "title": "On-going",
-        "type": "progress",
-        "items": ["Pls work coming soon", "Pls trivia getting the answers correct coming soon"]
-  }*/
+        "title": "New Stuff",
+        "items": ["Added a ton of shit I cant really remember", "Dank memer with some options off seems to break idk ill fix later"]
+        },
+      /*
+            {
+              "title": "Bugs Squashed",
+              "type": "fixed",
+              "items": ["Dank Memer not starting correctly, due to some people not having top bar of discord."]
+        },
+            /*{
+              "title": "Improvements",
+              "type": "improved",
+              "items": ["Refactered commands to work with the new setting menu"]
+        }, {
+              "title": "On-going",
+              "type": "progress",
+              "items": ["Pls work coming soon", "Pls trivia getting the answers correct coming soon"]
+        }*/
     ],
     "defaultConfig": [{
       "type": "textbox",
@@ -103,12 +58,6 @@ const Selfbot = (() => {
       "collapsible": true,
       "shown": false,
       "settings": [{
-        "type": "switch",
-        "id": "status",
-        "name": "Topbar Status",
-        "note": "Whether or not the top bar with the coins/minute and total coins counter is there",
-        "value": true
-      }, {
         "type": "switch",
         "id": "deposit",
         "name": "pls deposit max",
@@ -183,17 +132,51 @@ const Selfbot = (() => {
     }]
   }, {
       "type": "category",
+      "id": "statusPosition",
+      "name": "Advanced Dank Memer Settings",
+      "collapsible": true,
+      "shown": false,
+      "settings": [{
+        "type": "switch",
+        "id": "status",
+        "name": "Topbar Status",
+        "note": "Whether or not the top bar with the coins/minute and total coins counter is there",
+        "value": true
+      }, {
+        "type": "color",
+        "id": "color",
+        "name": "The color of the status",
+        "note": "",
+        "value": "#72767d"
+      }, {
+        "type": "slider",
+        "id": "viewheight",
+        "name": "Viewheight of the status",
+        "note": "This is in relation to the top of the window",
+        "value": 0.52,
+        "min": 0,
+        "max": 100
+    }, {
+        "type": "slider",
+        "id": "viewwidth",
+        "name": "Viewwidth of the status",
+        "note": "This is in relation to the left of the window",
+        "value": 7,
+        "min": 0,
+        "max": 100
+    }]
+  }, {
+      "type": "category",
       "id": "other",
       "name": "Other Settings",
       "collapsible": true,
       "shown": false,
       "settings": [{
-        "type": "textbox",
+        "type": "color",
         "id": "embedColor",
         "name": "Embed Color",
-        "note": "This must be in decimal format, you can use https://www.rapidtables.com/convert/number/hex-to-decimal.html to get the right color",
-        "value": "16760389",
-        "placeholder": ""
+        "note": "This applies to commands such as /cat",
+        "value": "#fcba03"
   }]
   }]
   }
@@ -253,7 +236,7 @@ const Selfbot = (() => {
             avatar = initialCheck.avatar;
             id = initialCheck.id;
           }
-          // load settings
+
           const catApiKey = "ea42f3a5-746d-417f-be9f-1313c6b452f5";
 
           let catIds = {};
@@ -272,6 +255,10 @@ const Selfbot = (() => {
             return new Promise(resolve => setTimeout(resolve, milliseconds));
           }
 
+          function hexToDec(hexString) {
+            return parseInt(hexString.substring(1), 16);
+          }
+
           const SendClydeEmbed = (channel_id, embed) => {
             if (!embed.footer) {
               embed.footer = {
@@ -280,7 +267,7 @@ const Selfbot = (() => {
               }
             }
             if (!embed.color) {
-              embed.color = this.settings.other.embedColor;
+              embed.color = hexToDec(this.settings.other.embedColor);
             }
             if (embed.timestamp) {
               delete embed.timestamp;
@@ -317,7 +304,7 @@ const Selfbot = (() => {
               }
             }
             if (!embed.color) {
-              embed.color = this.settings.other.embedColor;
+              embed.color = hexToDec(this.settings.other.embedColor);
             }
             if (embed.timestamp) {
               delete embed.timestamp;
@@ -627,24 +614,24 @@ const Selfbot = (() => {
 
                     const botId = "270904126974590976";
 
-                    const topbar = document.querySelector("#app-mount div.da-directionRowReverse");
-                    if (topbar !== null) {
+                    if (this.settings.dankmemer.status) {
                       let style = document.createElement('style');
                       style.type = 'text/css';
                       style.innerHTML = `
-                        .memerinfo {
-                          position: absolute;
-                          top: 0.52vh;
-                          left: 7vw;
-                          color: var(--text-muted);
-                          font-weight: bold;
-                          font-size: 13px;
-                        }
-                        .memerinfo > * {
-                          margin-right: 10px;
-                          display: inline-block;
-                        }
-                      `;
+                          .memerinfo {
+                            position: absolute;
+                            top: ${this.settings.statusPosition.viewheight}vh;
+                            left: ${this.settings.statusPosition.viewwidth}vw;
+                            color: ${this.settings.statusPosition.color};
+                            font-weight: bold;
+                            font-size: 13px;
+                            z-index: 99999999999;
+                          }
+                          .memerinfo > * {
+                            margin-right: 10px;
+                            display: inline-block;
+                          }
+                        `;
                       document.getElementsByTagName('head')[0].appendChild(style);
 
                       const memerinfo = document.createElement("div");
@@ -657,8 +644,14 @@ const Selfbot = (() => {
                       var totalMoneyElement = document.createElement("h1");
                       memerinfo.appendChild(totalMoneyElement);
 
-                      topbar.append(memerinfo);
+                      document.body.appendChild(memerinfo);
+                      amountDepositedElement.innerText = "waiting for input";
+                      totalMoneyElement.innerText = "waiting for input";
                     }
+
+
+                    //topbar.append(memerinfo);
+
 
                     let amountsDeposited = [];
 
@@ -682,19 +675,13 @@ const Selfbot = (() => {
                             amountsDeposited.push(parseInt(amountDeposited));
                             const averageAmountDeposited = average(amountsDeposited);
                             // calculate ratio from 50-60 seconds
-                            let perMinute = 60 * (averageAmountDeposited / 50);
-                            perMinute = `Average ⏣/minute: ⏣ ${formatter.format(perMinute)}`
-                            let totalMoney = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
-                            totalMoney = `Total Money: ⏣ ${formatter.format(totalMoney)}`
-
-                            if ((topbar !== null) && (this.settings.dankmemer.status)) {
-                              console.log("doin it");
-                              amountDepositedElement.innerText = perMinute;
-                              totalMoneyElement.innerText = totalMoney;
-                            } else {
-                              console.log("not doin it");
-                              totalCoins = totalMoney;
-                              cpm = perMinute;
+                            cpm = 60 * (averageAmountDeposited / 50);
+                            cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`
+                            totalCoins = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
+                            totalCoins = `Total Money: ⏣ ${formatter.format(totalCoins)}`
+                            if (this.settings.dankmemer.status) {
+                              amountDepositedElement.innerText = cpm;
+                              totalMoneyElement.innerText = totalCoins;
                             }
 
                           }
@@ -767,9 +754,9 @@ const Selfbot = (() => {
                     }
                     if (Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length === 0) SendClydeError(t.channel.id, "You need to enable atleast one dank memer command");
                   }
-                        }
-                      ]
-                    },
+                }
+              ]
+            },
             {
               name: "Backup",
               icon: {
@@ -792,6 +779,7 @@ const Selfbot = (() => {
                   description: "Saves invites to all your servers to a file.",
                   options: [],
                   execute: async function(e, t) {
+                    // shit-code.exe
                     const userGuilds = await fetch(`https://discord.com/api/v8/users/@me/guilds`, {
                       headers: {
                         authorization: this.settings.token,
@@ -856,7 +844,7 @@ const Selfbot = (() => {
             SectionModule.push({
               id: `-${SectionModule.length + 1}`,
               name: module.name,
-              type: 0
+              type: 0,
             })
             module.commands.forEach(command => {
               CommandsModule.push({
@@ -885,6 +873,10 @@ const Selfbot = (() => {
           FluxDispatcher.unsubscribe("MESSAGE_CREATE", () => {});
         }
 
+        // observer(changes) {
+        //   console.log(changes);
+        // }
+
         getSettingsPanel() {
           const panel = this.buildSettingsPanel();
           let listener = false;
@@ -909,6 +901,23 @@ const Selfbot = (() => {
                   id = data.id;
                 }
               })
+            } else if (args[0] == "statusPosition") {
+              switch (args[1]) {
+                case "viewheight":
+                  document.getElementById("dankmemer").style.top = `${args[2]}vh`;
+                  break;
+                case "viewwidth":
+                  document.getElementById("dankmemer").style.left = `${args[2]}vw`;
+                  break;
+                case "color":
+                  document.getElementById("dankmemer").style.color = args[2];
+                  break;
+              }
+              // if (args[1] == "viewheight") {
+              //   document.getElementById("dankmemer").style.top = `${args[2]}vh`;
+              // } else if (args[1] == "viewwidth") {
+              //   document.getElementById("dankmemer").style.left = `${args[2]}vw`;
+              // }
             }
           })
           return panel.getElement();
