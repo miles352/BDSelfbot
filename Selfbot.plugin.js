@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.2.0",
+      "version": "1.2.1",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -26,7 +26,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["You can toggle all dank memer commands on/off in settings", "It is advised to use the dank memer bot in a channel with only you, other peoples messages mess it up sometimes"]
+        "items": ["/cpm which is basically an alternative to the topbar status thing", "You can toggle all dank memer commands on/off in settings", "It is advised to use the dank memer bot in a channel with only you, other peoples messages mess it up sometimes"]
         },
 
       /*{
@@ -214,6 +214,7 @@ const Selfbot = (() => {
       const FluxDispatcher = BdApi.findModuleByProps("subscribe");
       let dankmemerOn = false;
       let cpm;
+      let totalLoops = 0;
       let totalCoins = 0;
       let messageSent;
       return class Selfbot extends Plugin {
@@ -764,6 +765,7 @@ const Selfbot = (() => {
                     // ty joder for this im braindead at coding
                     let tempMoney = 0;
                     while (dankmemerOn) {
+                      totalLoops++;
                       const commandsOn = Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length;
                       let timeToWait = 50 / commandsOn * 1000;
                       if (this.settings.dankmemer.fish) {
@@ -814,7 +816,6 @@ const Selfbot = (() => {
                         SendMessage(t.channel.id, "pls dep max");
                         await wait(timeToWait);
                       }
-                      console.log(tempMoney);
                       totalCoins += tempMoney;
 
                       coinsPerLoop.push(tempMoney);
@@ -823,15 +824,43 @@ const Selfbot = (() => {
                       cpm = 60 * (averageAmountPerLoop / 50);
                       cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`;
                       if (this.settings.statusPosition.status) {
-                        console.log(cpm);
-                        console.log(`Total Money: ⏣ ${formatter.format(totalCoins)}`);
                         amountDepositedElement.innerText = cpm;
                         totalMoneyElement.innerText = `Total Money: ⏣ ${formatter.format(totalCoins)}`;
                       }
                       tempMoney = 0;
                     }
                   }
+                },
+                {
+                  name: "cpm",
+                  description: "Shows info about the Dank Memer Bot",
+                  options: [],
+                  execute: function(e, t) {
+                    if (!dankmemerOn) {
+                      BdApi.showToast('Dank Memer Farmer must be running!', { type: "error" });
+                      return
+                    }
+
+                    const embed = {
+                      title: "Dank Memer Farmer Info",
+                      type: "rich",
+                      fields: [
+                        {
+                          name: "Average Coins Per Minute",
+                          value: `${cpm}`
+                        }, {
+                          name: "Coins Gained in Current Session",
+                          value: `⏣ ${totalCoins}`
+                        }, {
+                          name: "Total Time Running",
+                          value: `${new Date(totalLoops * 50 * 1000).toISOString().substr(11, 8)}`
+                        }
+                      ]
+                    }
+
+                    SendClydeEmbed(t.channel.id, embed);
                   }
+                }
                 ]
               },
             {
