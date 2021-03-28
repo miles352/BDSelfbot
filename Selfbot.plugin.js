@@ -2,8 +2,8 @@
  * @name Selfbot
  * @author jefff#0999
  * @description Discord selfbot built with a betterdiscord plugin
- * @version 0.0.1
- * @invite soon maybe
+ * @version 1.1.3
+ * @invite m7HRTw8x48
  * @authorId 769415977439592468
  * @website https://jefff.dev
  */
@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.1.4",
+      "version": "1.2.0",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -26,10 +26,10 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added a ton of shit I cant really remember", "Dank memer with some options off seems to break idk ill fix later"]
+        "items": ["You can toggle all dank memer commands on/off in settings", "It is advised to use the dank memer bot in a channel with only you, other peoples messages mess it up sometimes"]
         },
 
-      {
+      /*{
         "title": "Bugs Squashed",
         "type": "fixed",
         "items": ["Hopefully fixes bug with status not showing"]
@@ -212,29 +212,26 @@ const Selfbot = (() => {
       const EditMessage = BdApi.findModuleByProps("sendMessage").editMessage;
       const DeleteMessage = BdApi.findModuleByProps("sendMessage").deleteMessage;
       const FluxDispatcher = BdApi.findModuleByProps("subscribe");
-      let avatar;
-      let id;
       let dankmemerOn = false;
       let cpm;
-      let totalCoins;
+      let totalCoins = 0;
+      let messageSent;
       return class Selfbot extends Plugin {
 
         async onStart() {
 
-          const initialCheck = await fetch(`https://discord.com/api/v8/users/@me`, {
+          let user = await fetch(`https://discord.com/api/v8/users/@me`, {
             headers: {
               authorization: this.settings.token,
               "Content-Type": 'application/json'
             },
             method: "GET"
           }).then(res => res.json());
-          if (initialCheck.message == "401: Unauthorized") {
+          if (user.message == "401: Unauthorized") {
             BdApi.Plugins.disable("Selfbot")
             BdApi.showToast('Invalid Token, please fix it in settings', { type: "error" });
           } else {
             BdApi.showToast("Token verified, you're good to go!", { type: "success" });
-            avatar = initialCheck.avatar;
-            id = initialCheck.id;
           }
 
           const catApiKey = "ea42f3a5-746d-417f-be9f-1313c6b452f5";
@@ -263,7 +260,7 @@ const Selfbot = (() => {
             if (!embed.footer) {
               embed.footer = {
                 text: "Jefff-Cord",
-                icon_url: `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp`
+                icon_url: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp`
               }
             }
             if (!embed.color) {
@@ -281,17 +278,25 @@ const Selfbot = (() => {
             BdApi.findModuleByProps("sendMessage").sendMessage(channel_id, { content: msgContent, nonce: Date.now() * (2 * 22), validNonShortcutEmojis: [] })
           }
 
-          const SendClydeError = (channel_id, errorMsg) => {
-            const embed = {
-              title: "Error!!",
-              description: errorMsg.toString(),
-              color: 15077392,
+          const SendClydeStatus = (channel_id, message, type) => {
+            let embed = {
+              description: message.toString(),
               type: "rich",
               thumbnail: {
-                url: "https://cdn1.iconfinder.com/data/icons/color-bold-style/21/08-512.png",
                 height: 100,
                 width: 100
               }
+            }
+            switch (type) {
+              case "success":
+                embed.title = "Success",
+                  embed.color = 1175572,
+                  embed.thumbnail.url = "https://cdn.discordapp.com/emojis/717430953936683039.png?v=1"
+                break;
+              case "error":
+                embed.title = "Error!",
+                  embed.color = 15077392,
+                  embed.thumbnail.url = "https://cdn1.iconfinder.com/data/icons/color-bold-style/21/08-512.png"
             }
             SendClydeEmbed(channel_id, embed);
           }
@@ -300,7 +305,7 @@ const Selfbot = (() => {
             if (!embed.footer) {
               embed.footer = {
                 text: "Jefff-Cord",
-                icon_url: `https://cdn.discordapp.com/avatars/${id}/${avatar}.webp`
+                icon_url: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp`
               }
             }
             if (!embed.color) {
@@ -382,7 +387,7 @@ const Selfbot = (() => {
                         ]
                       });
                     } catch (e) {
-                      SendClydeError(t.channel.id, e);
+                      SendClydeStatus(t.channel.id, e, "error");
                     }
                   },
                  },
@@ -432,7 +437,7 @@ const Selfbot = (() => {
                       }
                       SendClydeEmbed(t.channel.id, embed);
                     } catch (err) {
-                      SendClydeError(t.channel.id, err)
+                      SendClydeStatus(t.channel.id, err, "error")
                     }
                   }
                  }
@@ -475,8 +480,8 @@ const Selfbot = (() => {
                         },
                         type: "rich",
                       })
-                    } catch (e) {
-                      SendClydeError(t.channel.id, e)
+                    } catch (err) {
+                      SendClydeStatus(t.channel.id, err, "error")
                     }
                   }
                  },
@@ -509,7 +514,7 @@ const Selfbot = (() => {
                 //       await wait(2000);
                 //       DeleteMessage(t.channel.id, messageId);
                 //     } catch (err) {
-                //       SendClydeError(t.channel.id, err);
+                //       SendClydeStatus(t.channel.id, err, "error")
                 //     }
                 //   }
                 // },
@@ -572,7 +577,7 @@ const Selfbot = (() => {
                       }
                       SendEmbed(t.channel.id, embed);
                     } catch (err) {
-                      SendClydeError(t.channel.id, err);
+                      SendClydeStatus(t.channel.id, err, "error")
                     }
                   }
                 },
@@ -595,15 +600,19 @@ const Selfbot = (() => {
                   options: [],
                   execute: async (e, t) => {
                     if (dankmemerOn) {
-                      SendClyde(t.channel.id, "Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord");
+                      BdApi.showToast('Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord', { type: "success" });
                       dankmemerOn = false;
                       if (document.contains(document.getElementById("dankmemer"))) {
                         document.getElementById("dankmemer").parentNode.removeChild(document.getElementById("dankmemer"));
                       }
-                      FluxDispatcher.unsubscribe("MESSAGE_CREATE", () => {});
+                      FluxDispatcher.unsubscribe("MESSAGE_CREATE", messageSent);
                       return;
                     }
-                    SendClyde(t.channel.id, "Dank Memer Farmer on");
+                    if (Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length === 0) {
+                      BdApi.showToast('Failed to start: Please select at least one currency command', { type: "error" });
+                      return
+                    }
+                    BdApi.showToast('Dank Memer Farmer On', { type: "success" });
                     dankmemerOn = true;
 
                     const formatter = new Intl.NumberFormat();
@@ -645,56 +654,116 @@ const Selfbot = (() => {
                       memerinfo.appendChild(totalMoneyElement);
 
                       document.body.appendChild(memerinfo);
-                      amountDepositedElement.innerText = "waiting for input";
-                      totalMoneyElement.innerText = "waiting for input";
+                      amountDepositedElement.innerText = "Average ⏣/minute:";
+                      totalMoneyElement.innerText = "Total Money:";
                     }
 
 
                     //topbar.append(memerinfo);
 
 
-                    let amountsDeposited = [];
+                    function getMoney(text) {
+                      const matches = /⏣ [0-9,]+/.exec(text);
 
-                    const messageSent = async (...args) => {
-                      try {
-                        const content = args[0].message.content;
-                        if (args[0].channelId == t.channel.id && args[0].message.author.id == botId && args[0].message.mentions[0].id == id) {
-                          if (content.includes("Where do you want to search")) {
-                            const thingToSearch = content.substring(content.lastIndexOf(",") + 3, content.lastIndexOf("`"));
-                            SendMessage(t.channel.id, thingToSearch);
-                          } else if (content.includes("What type of meme do you want to post")) {
-                            SendMessage(t.channel.id, "k");
-                          } else if (content.includes("ITS A DRAGON")) {
-                            const dragonWord = content.substring(content.lastIndexOf("Type ") + 6, content.lastIndexOf("`")).replace(/﻿/g, "");
-                            SendMessage(t.channel.id, dragonWord);
-                          } else if (content.includes("fish is too strong")) {
-                            const fishWord = content.substring(content.lastIndexOf("Type ") + 6, content.lastIndexOf("`")).replace(/﻿/g, "");
-                            SendMessage(t.channel.id, fishWord);
-                          } else if (content.includes("deposited, current bank balance is") && this.settings.dankmemer.deposit) {
-                            const amountDeposited = content.substring(content.indexOf("⏣") + 2, content.indexOf("deposited") - 3).replace(/,/g, "");
-                            amountsDeposited.push(parseInt(amountDeposited));
-                            const averageAmountDeposited = average(amountsDeposited);
-                            // calculate ratio from 50-60 seconds
-                            cpm = 60 * (averageAmountDeposited / 50);
-                            cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`
-                            totalCoins = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
-                            totalCoins = `Total Money: ⏣ ${formatter.format(totalCoins)}`
-                            if (this.settings.statusPosition.status) {
-                              amountDepositedElement.innerText = cpm;
-                              totalMoneyElement.innerText = totalCoins;
-                            }
-
-                          }
-                        }
-                      } catch {
-
+                      if (matches !== null) {
+                        return parseInt(matches[0].replace(/[⏣,]/g, ""));
+                      } else {
+                        return 0;
                       }
+                    }
+
+                    messageSent = async (...args) => {
+                      if ((args[0].channelId != t.channel.id) || (args[0].message.author.id != botId)) return;
+
+                      const content = args[0].message.content;
+                      let embed = args[0].message.embeds[0];
+                      if (embed === undefined) embed = {};
+
+                      if (!("title" in embed)) embed.title = "nothing to find here";
+                      if (!("description" in embed)) embed.description = "nothing to find here";
+                      if (!("footer" in embed)) embed.footer = { text: "nothing to find here" };
+                      if (!("author" in embed)) embed.author = { name: "nothing to find here" };
+                      if (!("fields" in embed)) embed.fields = [{ name: "nothing to find here", value: "nothing to find here" }, { name: "nothing to find here", value: "nothing to find here" }];
+
+                      // if the message is an embed:
+                      if (embed.author.name.includes("trivia question")) {
+                        SendMessage(t.channel.id, ["A", "B", "C", "D"][Math.floor(Math.random() * 4)]);
+                      } else if (embed.description.includes("A number secret between")) {
+                        SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
+                      } else if (content.includes("Where do you want to search")) {
+                        const thingToSearch = content.substring(content.lastIndexOf(",") + 3, content.lastIndexOf("`"));
+                        SendMessage(t.channel.id, thingToSearch);
+                      } else if (content.includes("What type of meme do you want to post")) {
+                        SendMessage(t.channel.id, ["f", "r", "i", "c", "k"][Math.floor(Math.random() * 5)]);
+                      } else if (content.includes("ITS A DRAGON")) {
+                        const dragonWord = content.substring(content.lastIndexOf("Type ") + 6, content.lastIndexOf("`")).replace(/﻿/g, "");
+                        SendMessage(t.channel.id, dragonWord);
+                      } else if (content.includes("fish is too strong")) {
+                        const fishWord = content.substring(content.lastIndexOf("Type ") + 6, content.lastIndexOf("`")).replace(/﻿/g, "");
+                        SendMessage(t.channel.id, fishWord);
+                      } else if (content.includes("Type `h` to **hit**")) {
+                        SendMessage(t.channel.id, "s");
+                      } else if (content.includes("You got that answer correct")) {
+                        tempMoney + Number(content.match(/[0-9]/g).join(""));
+                      } else if (embed.footer.text.includes("Multi Bonus")) {
+                        // this seems to be true for most commands where you gain money
+                        tempMoney += getMoney(embed.description);
+                      } else if (content.includes("meme")) {
+                        tempMoney += getMoney(content);
+                      } else if (embed.author.name.includes("gambling game") || embed.author.name.includes("slot machine") || embed.author.name.includes("blackjack game")) {
+                        if (embed.description.includes("won")) {
+                          tempMoney += getMoney(embed.description);
+                        } else if (embed.description.includes("lost")) {
+                          tempMoney -= 10;
+                        }
+                      } else if (embed.footer.text.includes("snakeeyes")) {
+                        FluxDispatcher.subscribe("MESSAGE_UPDATE", messageUpdate);
+
+                        function messageUpdate(...args) {
+                          if (args[0].message.channel_id != t.channel.id) return;
+
+                          if (args[0].message.embeds[0].description.includes("lost")) {
+                            tempMoney -= 10;
+                            FluxDispatcher.unsubscribe("MESSAGE_UPDATE", messageUpdate);
+                          } else if (args[0].message.embeds[0].description.includes("won")) {
+                            tempMoney += getMoney(args[0].message.embeds[0].description);
+                            FluxDispatcher.unsubscribe("MESSAGE_UPDATE", messageUpdate);
+                          }
+
+                        };
+                      }
+
+                      /*else if (content.includes("deposited, current bank balance is") && this.settings.dankmemer.deposit) {
+                        const amountDeposited = content.substring(content.indexOf("⏣") + 2, content.indexOf("deposited") - 3).replace(/,/g, "");
+                        amountsDeposited.push(parseInt(amountDeposited));
+                        const averageAmountDeposited = average(amountsDeposited);
+                        // calculate ratio from 50-60 seconds
+                        cpm = 60 * (averageAmountDeposited / 50);
+                        cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`
+                        totalCoins = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
+                        totalCoins = `Total Money: ⏣ ${formatter.format(totalCoins)}`
+                        if (this.settings.statusPosition.status) {
+                          amountDepositedElement.innerText = cpm;
+                          totalMoneyElement.innerText = totalCoins;
+                        }
+
+                      }*/
+
+
+                      // UNCOMMENT THIS TO SEE EACH BOT MESSAGE LOGGED TO CONSOLE
+                      // if (args[0].channelId == t.channel.id && args[0].message.author.id == botId) {
+                      //   console.log(args[0].message);
+                      // }
 
                     }
                     // Subscribe.
                     FluxDispatcher.subscribe("MESSAGE_CREATE", messageSent);
 
-                    while ((Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length !== 0) && dankmemerOn) {
+                    let coinsPerLoop = [];
+
+                    // ty joder for this im braindead at coding
+                    let tempMoney = 0;
+                    while (dankmemerOn) {
                       const commandsOn = Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length;
                       let timeToWait = 50 / commandsOn * 1000;
                       if (this.settings.dankmemer.fish) {
@@ -720,13 +789,9 @@ const Selfbot = (() => {
                       if (this.settings.dankmemer.highlow) {
                         SendMessage(t.channel.id, "pls hl");
                         await wait(timeToWait);
-                        SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
-                        await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.trivia) {
                         SendMessage(t.channel.id, "pls trivia");
-                        await wait(timeToWait);
-                        SendMessage(t.channel.id, ["A", "B", "C", "D"][Math.floor(Math.random() * 4)]);
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.gamble) {
@@ -744,19 +809,31 @@ const Selfbot = (() => {
                       if (this.settings.dankmemer.blackjack) {
                         SendMessage(t.channel.id, "pls bj 10");
                         await wait(timeToWait);
-                        SendMessage(t.channel.id, "s");
-                        await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.deposit) {
                         SendMessage(t.channel.id, "pls dep max");
                         await wait(timeToWait);
                       }
+                      console.log(tempMoney);
+                      totalCoins += tempMoney;
+
+                      coinsPerLoop.push(tempMoney);
+                      const averageAmountPerLoop = average(coinsPerLoop);
+                      // calculate ratio from 50-60 seconds
+                      cpm = 60 * (averageAmountPerLoop / 50);
+                      cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`;
+                      if (this.settings.statusPosition.status) {
+                        console.log(cpm);
+                        console.log(`Total Money: ⏣ ${formatter.format(totalCoins)}`);
+                        amountDepositedElement.innerText = cpm;
+                        totalMoneyElement.innerText = `Total Money: ⏣ ${formatter.format(totalCoins)}`;
+                      }
+                      tempMoney = 0;
                     }
-                    if (Object.entries(this.settings.dankmemer).filter(f => f[1] !== false).length === 0) SendClydeError(t.channel.id, "You need to enable atleast one dank memer command");
                   }
-                }
-              ]
-            },
+                  }
+                ]
+              },
             {
               name: "Backup",
               icon: {
@@ -798,7 +875,7 @@ const Selfbot = (() => {
                           headers: {
                             authorization: this.settings.token
                           }
-                        }).then(res => res.json()).catch(err => SendClydeError(t.channel.id, err));
+                        }).then(res => res.json()).catch(err => SendClydeStatus(t.channel.id, err, "error"));
                         // console.log(channels);
                         let channelId = undefined;
                         channels.forEach(channel => {
@@ -829,15 +906,15 @@ const Selfbot = (() => {
                         // })
 
 
-                      } catch (e) {
-                        SendClydeError(t.channel.id, e);
+                      } catch (err) {
+                        SendClydeStatus(t.channel.id, err, "error")
                       }
                     }
                   }
                     }
                   ]
-                    }
-                  ]
+              }
+          ]
 
           // Insert all commands and "modules"/sections
           modules.forEach(module => {
@@ -870,7 +947,7 @@ const Selfbot = (() => {
           CommandsModule.length = 8;
           SectionModule.length = 1;
           // // Unsubscribe.
-          FluxDispatcher.unsubscribe("MESSAGE_CREATE", () => {});
+          FluxDispatcher.unsubscribe("MESSAGE_CREATE", messageSent);
         }
 
         // observer(changes) {
@@ -897,8 +974,7 @@ const Selfbot = (() => {
                   BdApi.showToast('Invalid Token', { type: "error" });
                 } else {
                   BdApi.showToast('Valid Token', { type: "success" });
-                  avatar = data.avatar;
-                  id = data.id;
+                  user = data;
                 }
               })
             } else if (args[0] == "statusPosition") {
