@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.2.3",
+      "version": "1.2.4",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -26,7 +26,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["/cats lists all the cat breeds you can use with /cat", "ICONS ARE BAAAAAAAAAAACK", "The smaller icons have been added! They look a bit weird but I think it's fine"]
+        "items": ["Added customization for pls search. Putting it on the \"dangerous setting\" gives you much more coins than the default, random"]
         },
 
       /*{
@@ -132,11 +132,32 @@ const Selfbot = (() => {
     }]
   }, {
       "type": "category",
-      "id": "statusPosition",
+      "id": "advancedMemer",
       "name": "Advanced Dank Memer Settings",
       "collapsible": true,
       "shown": false,
       "settings": [{
+        "type": "radio",
+        "id": "searchPreference",
+        "name": "pls search customization",
+        "value": "random",
+        "options": [{
+          "name": "Safe",
+          "value": "safe",
+          "desc": "The safest option, lesser profit",
+          "color": "#39c926"
+        }, {
+          "name": "Random",
+          "value": "random",
+          "desc": "Completely random, this is the default",
+          "color": "#d1d1d1"
+        }, {
+          "name": "Dangerous",
+          "value": "dangerous",
+          "desc": "Most profit but more dangerous",
+          "color": "#c91818"
+        }]
+      }, {
         "type": "switch",
         "id": "status",
         "name": "Topbar Status",
@@ -625,15 +646,15 @@ const Selfbot = (() => {
 
                     const botId = "270904126974590976";
 
-                    if (this.settings.statusPosition.status) {
+                    if (this.settings.advancedMemer.status) {
                       let style = document.createElement('style');
                       style.type = 'text/css';
                       style.innerHTML = `
                           .memerinfo {
                             position: absolute;
-                            top: ${this.settings.statusPosition.viewheight}vh;
-                            left: ${this.settings.statusPosition.viewwidth}vw;
-                            color: ${this.settings.statusPosition.color};
+                            top: ${this.settings.advancedMemer.viewheight}vh;
+                            left: ${this.settings.advancedMemer.viewwidth}vw;
+                            color: ${this.settings.advancedMemer.color};
                             font-weight: bold;
                             font-size: 13px;
                             z-index: 99999999999;
@@ -693,8 +714,28 @@ const Selfbot = (() => {
                       } else if (embed.description.includes("A number secret between")) {
                         SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
                       } else if (content.includes("Where do you want to search")) {
-                        const thingToSearch = content.substring(content.lastIndexOf(",") + 3, content.lastIndexOf("`"));
-                        SendMessage(t.channel.id, thingToSearch);
+                        const safest = ["coat", "dresser", "pantry", "grass", "sink", "pocket", "mailbox", "shoe", "laundromat", "van", "vacuum", "couch", "uber", "vacuum", "glovebox", "bushes", "attic", "bed", "air", "tree", "dog", "dumpster", "street", "sewer", "hospital", "area51", "bank", "purse"];
+                        const mostProfit = ["area51", "air", "purse", "sewer", "bank", "dog", "tree", "hospital", "van", "glovebox", "attic", "uber", "coat", "couch", "dresser", "street", "discord", "grass", "dumpster", "mailbox", "pantry", "shoe", "bus", "sink", "laundromat", "pocket", "bed"];
+
+                        const options = content.match(/`(.*?)`/g).map(i => i.replace(/`/g, ""));
+
+                        if (this.settings.advancedMemer.searchPreference == "safe") {
+                          safest.some(thing => {
+                            if (options.includes(thing)) {
+                              SendMessage(t.channel.id, thing)
+                              return true
+                            }
+                          })
+                        } else if (this.settings.advancedMemer.searchPreference == "dangerous") {
+                          mostProfit.some(thing => {
+                            if (options.includes(thing)) {
+                              SendMessage(t.channel.id, thing)
+                              return true
+                            }
+                          })
+                        } else {
+                          SendMessage(t.channel.id, options[Math.floor(Math.random() * 3)]);
+                        }
                       } else if (content.includes("What type of meme do you want to post")) {
                         SendMessage(t.channel.id, ["f", "r", "i", "c", "k"][Math.floor(Math.random() * 5)]);
                       } else if (content.includes("ITS A DRAGON")) {
@@ -733,6 +774,8 @@ const Selfbot = (() => {
                           }
 
                         };
+                      } else if (/died|MURDERED|instantly get shot by the government/.test(embed.description)) {
+                        tempMoney = 0;
                       }
 
                       /*else if (content.includes("deposited, current bank balance is") && this.settings.dankmemer.deposit) {
@@ -744,7 +787,7 @@ const Selfbot = (() => {
                         cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`
                         totalCoins = content.substring(content.lastIndexOf("⏣") + 2, content.indexOf(".") - 2).replace(/,/g, "");
                         totalCoins = `Total Money: ⏣ ${formatter.format(totalCoins)}`
-                        if (this.settings.statusPosition.status) {
+                        if (this.settings.advancedMemer.status) {
                           amountDepositedElement.innerText = cpm;
                           totalMoneyElement.innerText = totalCoins;
                         }
@@ -824,14 +867,14 @@ const Selfbot = (() => {
                       // calculate ratio from 50-60 seconds
                       cpm = 60 * (averageAmountPerLoop / 50);
                       cpm = `Average ⏣/minute: ⏣ ${formatter.format(cpm)}`;
-                      if (this.settings.statusPosition.status) {
+                      if (this.settings.advancedMemer.status) {
                         amountDepositedElement.innerText = cpm;
                         totalMoneyElement.innerText = `Total Money: ⏣ ${formatter.format(totalCoins)}`;
                       }
                       tempMoney = 0;
                     }
                   }
-                },
+                        },
                 {
                   name: "cpm",
                   description: "Shows info about the Dank Memer Bot",
@@ -861,7 +904,7 @@ const Selfbot = (() => {
 
                     SendClydeEmbed(t.channel.id, embed);
                   }
-                },
+                        },
                 {
                   name: "cats",
                   description: "Lists all the cat breeds",
@@ -879,9 +922,9 @@ const Selfbot = (() => {
 
                     SendClydeEmbed(t.channel.id, embed);
                   }
-                }
-                ]
-              },
+                        }
+                      ]
+                    },
             {
               name: "Backup",
               icon: {
@@ -961,8 +1004,8 @@ const Selfbot = (() => {
                   }
                     }
                   ]
-              }
-          ]
+                    }
+                  ]
 
           // Insert all commands and "modules"/sections
           modules.forEach(module => {
@@ -1052,7 +1095,7 @@ const Selfbot = (() => {
                   user = data;
                 }
               })
-            } else if (args[0] == "statusPosition") {
+            } else if (args[0] == "advancedMemer") {
               switch (args[1]) {
                 case "viewheight":
                   document.getElementById("dankmemer").style.top = `${args[2]}vh`;
@@ -1064,11 +1107,6 @@ const Selfbot = (() => {
                   document.getElementById("dankmemer").style.color = args[2];
                   break;
               }
-              // if (args[1] == "viewheight") {
-              //   document.getElementById("dankmemer").style.top = `${args[2]}vh`;
-              // } else if (args[1] == "viewwidth") {
-              //   document.getElementById("dankmemer").style.left = `${args[2]}vw`;
-              // }
             }
           })
           return panel.getElement();
