@@ -18,7 +18,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.2.2",
+      "version": "1.2.3",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -26,7 +26,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["/cats lists all the cat breeds you can use with /cat", "ICONS ARE BAAAAAAAAAAACK", "I'll try to work on the smaller icons if they arn't too difficult"]
+        "items": ["/cats lists all the cat breeds you can use with /cat", "ICONS ARE BAAAAAAAAAAACK", "The smaller icons have been added! They look a bit weird but I think it's fine"]
         },
 
       /*{
@@ -1003,16 +1003,25 @@ const Selfbot = (() => {
           try {
 
             if (changes.addedNodes[0].className.includes("outerWrapper")) {
-              console.log("opened");
+              // load icons on left
               const listOfCategories = `div[aria-expanded="false"] > div > div:nth-of-type(2) > div > div > div > div > div`;
-              console.log(document.querySelector(`${listOfCategories}`));
               modules.slice().reverse().forEach(module => {
                 const categorySVG = `${listOfCategories} > div > div[aria-label="${module.name}"] > div > svg`;
-                console.log(document.querySelector(categorySVG));
                 document.querySelector(categorySVG).setAttribute("height", module.icon.height);
                 document.querySelector(categorySVG).setAttribute("width", module.icon.width);
                 document.querySelector(categorySVG).setAttribute("viewBox", module.icon.viewBox);
                 document.querySelector(`${categorySVG} > path`).setAttribute("d", module.icon.path);
+              })
+
+            } else {
+              modules.forEach(module => {
+                if (changes.addedNodes[0].innerText.startsWith(module.name.toUpperCase())) {
+                  const icons = document.querySelectorAll(`div > div > div > div[dir="ltr"] > div > div > div > div > span`);
+                  const correctIcon = Array.from(icons).filter(icon => icon.innerText.toLowerCase() == module.name.toLowerCase())[0];
+                  let svg = correctIcon.parentNode.firstChild.firstChild.firstChild;
+                  svg.setAttribute("viewBox", module.icon.viewBox);
+                  svg.firstChild.setAttribute("d", module.icon.path);
+                }
               })
 
             }
