@@ -8,6 +8,9 @@
  * @website https://jefff.dev
  */
 
+const { Buffer } = require("buffer");
+const fs = require('fs')
+
 const Selfbot = (() => {
 
   let config = {
@@ -18,15 +21,15 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.2.4",
+      "version": "1.3",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
     },
     "changelog": [
-      {
-        "title": "New Stuff",
-        "items": ["Added customization for pls search. Putting it on the \"dangerous setting\" gives you much more coins than the default, random"]
+          /*{
+            "title": "New Stuff",
+        "items": [""]
         },
 
       /*{
@@ -34,16 +37,18 @@ const Selfbot = (() => {
         "type": "fixed",
         "items": ["Hopefully fixes bug with status not showing"]
         },
-            /*{
-              "title": "Improvements",
-              "type": "improved",
-              "items": ["Refactered commands to work with the new setting menu"]
-        }, {
-              "title": "On-going",
-              "type": "progress",
-              "items": ["Pls work coming soon", "Pls trivia getting the answers correct coming soon"]
-        }*/
-    ],
+            */
+      {
+        "title": "Improvements",
+        "type": "improved",
+        "items": ["Banned from dank memer so most likely wont continue that project", "Server backup now logs to file"]
+            }
+            /*, {
+                          "title": "On-going",
+                          "type": "progress",
+                          "items": ["Pls work coming soon", "Pls trivia getting the answers correct coming soon"]
+                    }*/
+          ],
     "defaultConfig": [{
       "type": "textbox",
       "id": "token",
@@ -260,16 +265,14 @@ const Selfbot = (() => {
           const catApiKey = "ea42f3a5-746d-417f-be9f-1313c6b452f5";
 
           let catIds = {};
-          (async () => {
-            const data = await fetch(`https://api.thecatapi.com/v1/breeds`, {
-              headers: {
-                "x-api-key": catApiKey
-              }
-            }).then(res => res.json());
-            data.forEach(cat => {
-              Object.defineProperty(catIds, `${cat.name.toLowerCase()}`, { value: cat.id })
-            })
-          })();
+          const data = await fetch(`https://api.thecatapi.com/v1/breeds`, {
+            headers: {
+              "x-api-key": catApiKey
+            }
+          }).then(res => res.json());
+          data.forEach(cat => {
+            Object.defineProperty(catIds, `${cat.name.toLowerCase()}`, { value: cat.id })
+          })
 
           function wait(milliseconds) {
             return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -296,9 +299,21 @@ const Selfbot = (() => {
             }
             SendClyde(channel_id, "", [embed]);
           }
-          //SendMessage(t.channel.id, { content: "", nonce: Date.now() * (2 * 22), validNonShortcutEmojis: [] })
-          const SendMessage = (channel_id, msgContent) => {
-            BdApi.findModuleByProps("sendMessage").sendMessage(channel_id, { content: msgContent, nonce: Date.now() * (2 * 22), validNonShortcutEmojis: [] })
+          const SendMessage = async (channel_id, message, token = this.settings.token) => {
+            // BdApi.findModuleByProps("sendMessage").sendMessage(channel_id, { content: msgContent, nonce: Date.now() * (2 * 22), validNonShortcutEmojis: [] })
+            const data = await fetch(`https://discord.com/api/v8/channels/${channel_id}/messages`, {
+              method: "POST",
+              headers: {
+                Authorization: token,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                content: message,
+                tts: false,
+                nonce: `${Date.now() * (2 * 22)}`
+              })
+            }).then(res => res.json());
+            if (data.message == "Missing Access") BdApi.showToast('User does not have access to server/channel', { type: "error" });
           }
 
           const SendClydeStatus = (channel_id, message, type) => {
@@ -372,46 +387,34 @@ const Selfbot = (() => {
                 {
                   name: "userinfo",
                   description: "Displays user info.",
-                  options: [{ name: "id", type: 4, description: "User ID", required: true }],
+                  options: [{ name: "id", type: 3, description: "User ID", required: true }],
                   execute: async function(e, t) {
-                    try {
-                      const data = await fetch(`https://discord.com/api/v8/guilds/${t.guild.id}/members/${e.id[0].text}`, {
-                        headers: {
-                          authorization: this.settings.token
-                        }
-                      }).then(res => {
-                        if (res.status = 400) {
-                          throw "Invalid user ID"
-                        }
-                        return res.json()
-                      });
+                    console.log(e.id[0].text);
+                    const user = BdApi.findModuleByProps("getCurrentUser").getUser(`${e.id[0].text}`);
 
-                      SendClydeEmbed(t.channel.id, {
-                        title: `Information for User: ${data.user.username}`,
-                        type: "rich",
-                        thumbnail: {
-                          url: `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}`,
-                          height: 128,
-                          width: 128
-                        },
-                        fields: [
-                          {
-                            name: "Username",
-                            value: `${data.user.username}#${data.user.discriminator}`
+                    SendClydeEmbed(t.channel.id, {
+                      title: `Information for User: ${user.username}`,
+                      type: "rich",
+                      thumbnail: {
+                        url: `${user.avatarURL}`,
+                        height: 128,
+                        width: 128
+                      },
+                      fields: [
+                        {
+                          name: "Username",
+                          value: `${user.tag}`
                           },
-                          {
-                            name: "ID",
-                            value: data.user.id
+                        {
+                          name: "ID",
+                          value: `${user.id}`
                           },
-                          {
-                            name: "Server Join Date",
-                            value: `${data.joined_at.slice(5, 10)}-${data.joined_at.slice(0,4)}`
+                        {
+                          name: "Account created at",
+                          value: `${user.createdAt}`
                           }
                         ]
-                      });
-                    } catch (e) {
-                      SendClydeStatus(t.channel.id, e, "error");
-                    }
+                    });
                   },
                  },
                 {
@@ -463,10 +466,27 @@ const Selfbot = (() => {
                       SendClydeStatus(t.channel.id, err, "error")
                     }
                   }
-                 }
-               ]
-             },
-            {
+                },
+                {
+                  name: "joinserver",
+                  description: "Joins a server from an invite code.",
+                  options: [{
+                    type: 3,
+                    name: "invite code",
+                    required: true
+                  }],
+                  execute: async (e, t) => {
+                    const data = await fetch(`https://discord.com/api/v8/invites/${e["invite code"][0].text}`, {
+                      method: "POST",
+                      headers: {
+                        authorization: this.settings.token,
+                        "Content-Type": "application/json"
+                      }
+                    }).then(res => res.json());
+                  }
+                }
+              ]
+            }, {
               name: "Fun",
               icon: {
                 path: `M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6 14h-12c.331 1.465 2.827 4 6.001 4 3.134 0 5.666-2.521 5.999-4zm0-3.998l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002zm-7 0l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002z`,
@@ -510,10 +530,20 @@ const Selfbot = (() => {
                  },
                 {
                   name: "say",
-                  description: "Sends a message as Clyde that only you can see.",
+                  description: "Sends a message. Useful if the token inputted isn't your own.",
                   options: [{ name: "message", type: 3, description: "Message content", required: true }],
                   execute: function(e, t) {
-                    SendClyde(t.channel.id, e.message[0].text);
+                    let message = "";
+                    e.message.forEach(messagePart => {
+                      if (messagePart.type === "text") {
+                        message += messagePart.text
+                      } else if (messagePart.type === "userMention") {
+                        message += `<@${messagePart.userId}>`
+                      } else if (messagePart.type === "emoji") {
+                        message += messagePart.name
+                      }
+                    })
+                    SendMessage(t.channel.id, message);
                   },
                  },
                 // {
@@ -623,6 +653,8 @@ const Selfbot = (() => {
                   options: [],
                   execute: async (e, t) => {
                     if (dankmemerOn) {
+                      totalCoins = 0;
+                      cpm = 0;
                       BdApi.showToast('Dank Memer Farmer off, it will stop after the current loop. If you really need it stopped now you can restart discord', { type: "success" });
                       dankmemerOn = false;
                       if (document.contains(document.getElementById("dankmemer"))) {
@@ -712,10 +744,15 @@ const Selfbot = (() => {
                       if (embed.author.name.includes("trivia question")) {
                         SendMessage(t.channel.id, ["A", "B", "C", "D"][Math.floor(Math.random() * 4)]);
                       } else if (embed.description.includes("A number secret between")) {
-                        SendMessage(t.channel.id, ["high", "low", "jackpot"][Math.floor(Math.random() * 3)]);
+                        const hint = embed.description.match(/(?<=\*)(.*?)(?=\*)/g)[1];
+                        if (hint > 50) {
+                          SendMessage(t.channel.id, "low");
+                        } else {
+                          SendMessage(t.channel.id, "high");
+                        }
                       } else if (content.includes("Where do you want to search")) {
                         const safest = ["coat", "dresser", "pantry", "grass", "sink", "pocket", "mailbox", "shoe", "laundromat", "van", "vacuum", "couch", "uber", "vacuum", "glovebox", "bushes", "attic", "bed", "air", "tree", "dog", "dumpster", "street", "sewer", "hospital", "area51", "bank", "purse"];
-                        const mostProfit = ["area51", "air", "purse", "sewer", "bank", "dog", "tree", "hospital", "van", "glovebox", "attic", "uber", "coat", "couch", "dresser", "street", "discord", "grass", "dumpster", "mailbox", "pantry", "shoe", "bus", "sink", "laundromat", "pocket", "bed"];
+                        const mostProfit = ["area51", "air", "purse", "sewer", "bank", "dog", "tree", "hospital", "attic", "van", "glovebox", "uber", "coat", "couch", "dresser", "street", "discord", "grass", "dumpster", "mailbox", "pantry", "shoe", "bus", "sink", "laundromat", "pocket", "bed"];
 
                         const options = content.match(/`(.*?)`/g).map(i => i.replace(/`/g, ""));
 
@@ -874,7 +911,7 @@ const Selfbot = (() => {
                       tempMoney = 0;
                     }
                   }
-                        },
+                },
                 {
                   name: "cpm",
                   description: "Shows info about the Dank Memer Bot",
@@ -922,10 +959,9 @@ const Selfbot = (() => {
 
                     SendClydeEmbed(t.channel.id, embed);
                   }
-                        }
-                      ]
-                    },
-            {
+                }
+              ]
+            }, {
               name: "Backup",
               icon: {
                 path: `M17.927,5.828h-4.41l-1.929-1.961c-0.078-0.079-0.186-0.125-0.297-0.125H4.159c-0.229,0-0.417,0.188-0.417,0.417v1.669H2.073c-0.229,0-0.417,0.188-0.417,0.417v9.596c0,0.229,0.188,0.417,0.417,0.417h15.854c0.229,0,0.417-0.188,0.417-0.417V6.245C18.344,6.016,18.156,5.828,17.927,5.828 M4.577,4.577h6.539l1.231,1.251h-7.77V4.577z M17.51,15.424H2.491V6.663H17.51V15.424z`,
@@ -946,7 +982,19 @@ const Selfbot = (() => {
                   name: "backupserverinvites",
                   description: "Saves invites to all your servers to a file.",
                   options: [],
-                  execute: async function(e, t) {
+                  execute: async (e, t) => {
+                    BdApi.showToast('Started Server Backup', { type: "success" });
+                    fs.mkdir(__dirname + '/SelfbotData/Backup', { recursive: true }, (err) => {
+                      if (err) BdApi.showToast(err, { type: "error" });
+                    });
+
+                    fs.unlink(__dirname + '/SelfbotData/Backup/Server Invites.txt', (err) => {
+                      if (err) {
+                        console.error(err)
+                        return
+                      }
+                    })
+
                     // shit-code.exe
                     const userGuilds = await fetch(`https://discord.com/api/v8/users/@me/guilds`, {
                       headers: {
@@ -990,21 +1038,35 @@ const Selfbot = (() => {
                         await wait(5000);
                         BdApi.findModuleByProps("createInvite").createInvite(channelId, { max_age: 0 })
                           .then(res => {
-                            console.log(`Created invite code: "${res.code}", in server ${guildName}, which has icon ${guildIcon}`);
+                            // console.log(`Created invite code: "${res.code}", in server ${guildName}, which has icon ${guildIcon}`);
+                            const content = `Created invite code: "${res.code}", in server ${guildName}.`;
+                            fs.appendFile(__dirname + '/SelfbotData/Backup/Server Invites.txt', "\n" + content, err => {
+                              if (err) {
+                                console.error(err)
+                                return
+                              }
+                            })
                           })
                         // .catch(err => {
                         //   console.log(`Server: ${guildName}. Channel: ${logchannel.name}`);
                         // })
 
 
-                      } catch (err) {
-                        SendClydeStatus(t.channel.id, err, "error")
+                      } catch (error) {
+                        // SendClydeStatus(t.channel.id, err, "error")
+                        fs.appendFile(__dirname + '/SelfbotData/Backup/Server Invites.txt', "\n" + error, err => {
+                          if (err) {
+                            console.error(err)
+                            return
+                          }
+                        })
                       }
                     }
+                    BdApi.sendToast("Done! Check SelfbotData/Backup/Server Invites.txt", { type: "success" });
                   }
-                    }
-                  ]
-                    }
+                        }
+                      ]
+                    },
                   ]
 
           // Insert all commands and "modules"/sections
@@ -1057,6 +1119,7 @@ const Selfbot = (() => {
               })
 
             } else {
+              // load small icons
               modules.forEach(module => {
                 if (changes.addedNodes[0].innerText.startsWith(module.name.toUpperCase())) {
                   const icons = document.querySelectorAll(`div > div > div > div[dir="ltr"] > div > div > div > div > span`);
