@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.3",
+      "version": "1.3.1",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -41,7 +41,7 @@ const Selfbot = (() => {
       {
         "title": "Improvements",
         "type": "improved",
-        "items": ["Banned from dank memer so most likely wont continue that project", "Server backup now logs to file"]
+        "items": ["You can load your backed up servers now"]
             }
             /*, {
                           "title": "On-going",
@@ -988,28 +988,29 @@ const Selfbot = (() => {
                       if (err) BdApi.showToast(err, { type: "error" });
                     });
 
-                    fs.unlink(__dirname + '/SelfbotData/Backup/Server Invites.txt', (err) => {
-                      if (err) {
-                        console.error(err)
-                        return
-                      }
-                    })
+                    fs.unlink(__dirname + '/SelfbotData/Backup/Server Invites.json', err => {
+                      if (err) return;
+                    });
 
+                    let fileContent = [];
                     // shit-code.exe
                     const userGuilds = await fetch(`https://discord.com/api/v8/users/@me/guilds`, {
                       headers: {
                         authorization: this.settings.token,
                       }
                     }).then(res => res.json())
+                    console.log(userGuilds);
                     // console.log(userGuilds);
                     for (var i = 0; i < userGuilds.length; i++) {
+                      await wait(1000);
+                      console.log(`Trying: ${userGuilds[i].name}`);
                       try {
                         if (userGuilds[i].features.includes("VANITY_URL")) {
+                          console.log(`Vanity URL: ${userGuilds[i].name}`);
                           throw `Server: ${userGuilds[i].name} | Vanity URLS are not currently supported.`;
                         }
-                        const guildName = userGuilds[i].name;
                         const guildIcon = `https://cdn.discordapp.com/icons/${userGuilds[i].id}/${userGuilds[i].icon}.webp?size=128`;
-                        await wait(1000);
+
                         const channels = await fetch(`https://discord.com/api/v8/guilds/${userGuilds[i].id}/channels`, {
                           headers: {
                             authorization: this.settings.token
@@ -1032,37 +1033,75 @@ const Selfbot = (() => {
                           }
                         })
                         if (channelId === undefined) {
-                          throw `No permissions to create invite in server \`${userGuilds[i].name}\``;
+                          throw `No permissions to create invite in server ${userGuilds[i].name}`;
                         }
 
                         await wait(5000);
                         BdApi.findModuleByProps("createInvite").createInvite(channelId, { max_age: 0 })
                           .then(res => {
-                            // console.log(`Created invite code: "${res.code}", in server ${guildName}, which has icon ${guildIcon}`);
-                            const content = `Created invite code: "${res.code}", in server ${guildName}.`;
-                            fs.appendFile(__dirname + '/SelfbotData/Backup/Server Invites.txt', "\n" + content, err => {
-                              if (err) {
-                                console.error(err)
-                                return
-                              }
+                            console.log(res);
+                            fileContent.push({
+                              serverName: res.guild.name,
+                              inviteCode: res.code
                             })
+                            BdApi.showToast(`Backed Up: ${userGuilds[i - 1].name} with code ${res.code}`, { type: "success" });
                           })
-                        // .catch(err => {
-                        //   console.log(`Server: ${guildName}. Channel: ${logchannel.name}`);
-                        // })
+
 
 
                       } catch (error) {
-                        // SendClydeStatus(t.channel.id, err, "error")
-                        fs.appendFile(__dirname + '/SelfbotData/Backup/Server Invites.txt', "\n" + error, err => {
-                          if (err) {
-                            console.error(err)
-                            return
-                          }
-                        })
+                        console.log("ERROR: " + error);
+                        BdApi.showToast(error, { type: "error" });
+                        // fileContent.push({
+                        //   serverName: userGuilds[i].name,
+                        //   inviteCode: false
+                        // })
                       }
                     }
-                    BdApi.sendToast("Done! Check SelfbotData/Backup/Server Invites.txt", { type: "success" });
+                    console.log(JSON.stringify(fileContent));
+                    fs.writeFile(__dirname + "/SelfbotData/Backup/Server Invites.json", JSON.stringify(fileContent), err => {
+                      if (err) BdApi.showToast(err, { type: "error" });
+
+                      BdApi.showToast("Done! Check SelfbotData/Backup/Server Invites.json", { type: "success" });
+                    });
+
+                  }
+                },
+                {
+                  name: "loadservers",
+                  description: "Joins the servers from Server Invites.txt",
+                  options: [],
+                  execute: (e, t) => {
+                    fs.access(__dirname + "/SelfbotData/Backup/Server Invites.json", fs.F_OK, (err) => {
+                      if (err) {
+                        BdApi.showToast(err, { type: "error" });
+                        return
+                      }
+                      fs.readFile(__dirname + "/SelfbotData/Backup/Server Invites.json", async (err, data) => {
+                        if (err) {
+                          BdApi.showToast(err, { type: "error" });
+                          return
+                        };
+                        const invites = JSON.parse(data);
+                        for (const invite of invites) {
+                          await wait(5000);
+                          if (!invite.inviteCode) return;
+                          await fetch(`https://discord.com/api/v8/invites/${invite.inviteCode}`, {
+                            method: "POST",
+                            headers: {
+                              'Content-Type': 'application/json',
+                              authorization: this.settings.token
+                            }
+                          }).catch(err => {
+                            BdApi.showToast(err, { type: 'error' });
+                            return;
+                          })
+                          BdApi.showToast(`Joined Server: ${invite.serverName}`, { type: "success" });
+                        }
+                      });
+                    })
+
+
                   }
                         }
                       ]
