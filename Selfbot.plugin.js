@@ -21,15 +21,15 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.3.1",
+      "version": "1.3.5",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
     },
     "changelog": [
-          /*{
-            "title": "New Stuff",
-        "items": [""]
+      {
+        "title": "New Stuff",
+        "items": ["Added /lenny at the request of Xaela"]
         },
 
       /*{
@@ -38,7 +38,7 @@ const Selfbot = (() => {
         "items": ["Hopefully fixes bug with status not showing"]
         },
             */
-      {
+      /*{
         "title": "Improvements",
         "type": "improved",
         "items": ["You can load your backed up servers now"]
@@ -247,6 +247,10 @@ const Selfbot = (() => {
       return class Selfbot extends Plugin {
 
         async onStart() {
+
+          fs.mkdir(__dirname + '/SelfbotData/Backup/Emojis', { recursive: true }, (err) => {
+            if (err) BdApi.showToast(err, { type: "error" });
+          });
 
           let user = await fetch(`https://discord.com/api/v8/users/@me`, {
             headers: {
@@ -528,6 +532,28 @@ const Selfbot = (() => {
                     }
                   }
                  },
+                {
+                  name: "lenny",
+                  description: "Appends ( ͡° ͜ʖ ͡°) to your message.",
+                  options: [{ type: 3, name: "message", required: false }],
+                  execute: (e, t) => {
+                    let message = "";
+                    if (e.message) {
+                      e.message.forEach(messagePart => {
+                        if (messagePart.type === "text") {
+                          message += messagePart.text
+                        } else if (messagePart.type === "userMention") {
+                          message += `<@${messagePart.userId}>`
+                        } else if (messagePart.type === "emoji") {
+                          message += messagePart.name
+                        }
+                      })
+                    }
+                    message += " ( ͡° ͜ʖ ͡°)";
+
+                    SendMessage(t.channel.id, message);
+                  }
+                },
                 {
                   name: "say",
                   description: "Sends a message. Useful if the token inputted isn't your own.",
@@ -941,7 +967,7 @@ const Selfbot = (() => {
 
                     SendClydeEmbed(t.channel.id, embed);
                   }
-                        },
+                },
                 {
                   name: "cats",
                   description: "Lists all the cat breeds",
@@ -984,9 +1010,6 @@ const Selfbot = (() => {
                   options: [],
                   execute: async (e, t) => {
                     BdApi.showToast('Started Server Backup', { type: "success" });
-                    fs.mkdir(__dirname + '/SelfbotData/Backup', { recursive: true }, (err) => {
-                      if (err) BdApi.showToast(err, { type: "error" });
-                    });
 
                     fs.unlink(__dirname + '/SelfbotData/Backup/Server Invites.json', err => {
                       if (err) return;
@@ -999,58 +1022,54 @@ const Selfbot = (() => {
                         authorization: this.settings.token,
                       }
                     }).then(res => res.json())
-                    console.log(userGuilds);
-                    // console.log(userGuilds);
                     for (var i = 0; i < userGuilds.length; i++) {
                       await wait(1000);
-                      console.log(`Trying: ${userGuilds[i].name}`);
                       try {
                         if (userGuilds[i].features.includes("VANITY_URL")) {
-                          console.log(`Vanity URL: ${userGuilds[i].name}`);
-                          throw `Server: ${userGuilds[i].name} | Vanity URLS are not currently supported.`;
-                        }
-                        const guildIcon = `https://cdn.discordapp.com/icons/${userGuilds[i].id}/${userGuilds[i].icon}.webp?size=128`;
-
-                        const channels = await fetch(`https://discord.com/api/v8/guilds/${userGuilds[i].id}/channels`, {
-                          headers: {
-                            authorization: this.settings.token
-                          }
-                        }).then(res => res.json()).catch(err => SendClydeStatus(t.channel.id, err, "error"));
-                        // console.log(channels);
-                        let channelId = undefined;
-                        channels.forEach(channel => {
-                          if (channel.type == 0 && channelId === undefined) {
-                            let havePermission = true;
-                            channel.permission_overwrites.forEach(permission => {
-                              // if DONT have permission to invite
-                              if ((permission.deny & 0x1) == 0x1) {
-                                havePermission = false;
-                              }
-                            })
-                            if (havePermission) {
-                              channelId = channel.id;
-                            }
-                          }
-                        })
-                        if (channelId === undefined) {
-                          throw `No permissions to create invite in server ${userGuilds[i].name}`;
-                        }
-
-                        await wait(5000);
-                        BdApi.findModuleByProps("createInvite").createInvite(channelId, { max_age: 0 })
-                          .then(res => {
-                            console.log(res);
-                            fileContent.push({
-                              serverName: res.guild.name,
-                              inviteCode: res.code
-                            })
-                            BdApi.showToast(`Backed Up: ${userGuilds[i - 1].name} with code ${res.code}`, { type: "success" });
+                          fileContent.push({
+                            serverName: userGuilds[i].name,
+                            inviteCode: BdApi.findModuleByProps("getGuild").getGuild(userGuilds[i].id).vanityURLCode
                           })
+                          BdApi.showToast(`Backed Up: ${userGuilds[i].name}, with its vanity URL`, { type: "success" });
+                        } else {
+                          const guildIcon = `https://cdn.discordapp.com/icons/${userGuilds[i].id}/${userGuilds[i].icon}.webp?size=128`;
 
+                          const channels = await fetch(`https://discord.com/api/v8/guilds/${userGuilds[i].id}/channels`, {
+                            headers: {
+                              authorization: this.settings.token
+                            }
+                          }).then(res => res.json()).catch(err => SendClydeStatus(t.channel.id, err, "error"));
+                          let channelId = undefined;
+                          channels.forEach(channel => {
+                            if (channel.type == 0 && channelId === undefined) {
+                              let havePermission = true;
+                              channel.permission_overwrites.forEach(permission => {
+                                // if DONT have permission to invite
+                                if ((permission.deny & 0x1) == 0x1) {
+                                  havePermission = false;
+                                }
+                              })
+                              if (havePermission) {
+                                channelId = channel.id;
+                              }
+                            }
+                          })
+                          if (channelId === undefined) {
+                            throw `No permissions to create invite in server ${userGuilds[i].name}`;
+                          }
 
+                          await wait(5000);
+                          BdApi.findModuleByProps("createInvite").createInvite(channelId, { max_age: 0 })
+                            .then(res => {
+                              fileContent.push({
+                                serverName: res.guild.name,
+                                inviteCode: res.code
+                              })
+                              BdApi.showToast(`Backed Up: ${res.guild.name} with code ${res.code}`, { type: "success" });
+                            }).catch(err => BdApi.showToast(`Failed to backup ${userGuilds[i-1].name}. Error code: ${err.status}`, { type: "error" }))
+                        }
 
                       } catch (error) {
-                        console.log("ERROR: " + error);
                         BdApi.showToast(error, { type: "error" });
                         // fileContent.push({
                         //   serverName: userGuilds[i].name,
@@ -1058,7 +1077,6 @@ const Selfbot = (() => {
                         // })
                       }
                     }
-                    console.log(JSON.stringify(fileContent));
                     fs.writeFile(__dirname + "/SelfbotData/Backup/Server Invites.json", JSON.stringify(fileContent), err => {
                       if (err) BdApi.showToast(err, { type: "error" });
 
@@ -1100,13 +1118,39 @@ const Selfbot = (() => {
                         }
                       });
                     })
-
-
                   }
-                        }
-                      ]
-                    },
-                  ]
+                  },
+                // {
+                //   name: "downloademojis",
+                //   description: "Downloads emojis in a given server",
+                //   options: [{ type: 3, name: "serverId", required: true }, { type: 3, name: "type", choices: [{ name: "Only Animated", value: "animated" }, { name: "Only Still", value: "still" }] }],
+                //   execute: async (e, t) => {
+                //     // e.serverId[0].text = serverId
+                //     // e.type[0].text = "Only Animated" || "Only Still"
+                //     const guild = await fetch(`https://discord.com/api/v8/guilds/${e.serverId[0].text}`, {
+                //       headers: {
+                //         'Content-Type': 'application/json',
+                //         authorization: this.settings.token
+                //       }
+                //     }).then(res => res.json())
+                //     const path = __dirname + `/SelfbotData/Backup/Emojis/${guild.name}`;
+                //     if (!fs.existsSync(path)) {
+                //       fs.mkdirSync(path);
+                //     }
+                //     for (var i = 0; i < guild.emojis.length; i++) {
+                //       const fileType = guild.emojis[i].animated ? ".gif" : ".png";
+                //
+                //       const response = await fetch(`https://cdn.discordapp.com/emojis/${guild.emojis[i].id}${fileType}`);
+                //       console.log(response);
+                //       var file = fs.createWriteStream(`${path}/${guild.emojis[i].name}${fileType}`);
+                //       response.body.pipe(file);
+                //
+                //     }
+                //   }
+                //   }
+                ]
+              },
+            ]
 
           // Insert all commands and "modules"/sections
           modules.forEach(module => {
