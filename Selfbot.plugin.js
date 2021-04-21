@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.3.5",
+      "version": "1.4.0",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added /lenny at the request of Xaela"]
+        "items": ["Added /texttospeech"]
         },
 
       /*{
@@ -238,6 +238,7 @@ const Selfbot = (() => {
       const EditMessage = BdApi.findModuleByProps("sendMessage").editMessage;
       const DeleteMessage = BdApi.findModuleByProps("sendMessage").deleteMessage;
       const FluxDispatcher = BdApi.findModuleByProps("subscribe");
+      const ttsApiKey = "449a08838f01456cb7e53d3cbb0794b0";
       let dankmemerOn = false;
       let cpm;
       let totalLoops = 0;
@@ -284,6 +285,20 @@ const Selfbot = (() => {
 
           function hexToDec(hexString) {
             return parseInt(hexString.substring(1), 16);
+          }
+
+          function getAllMessageParts(messageParts) {
+            let message = "";
+            messageParts.forEach(messagePart => {
+              if (messagePart.type === "text") {
+                message += messagePart.text
+              } else if (messagePart.type === "userMention") {
+                message += `<@${messagePart.userId}>`
+              } else if (messagePart.type === "emoji") {
+                message += messagePart.name
+              }
+            })
+            return message;
           }
 
           const SendClydeEmbed = (channel_id, embed) => {
@@ -487,6 +502,27 @@ const Selfbot = (() => {
                         "Content-Type": "application/json"
                       }
                     }).then(res => res.json());
+                  }
+                },
+                {
+                  name: "texttospeech",
+                  description: "Sends a text to speech of your text",
+                  options: [{type: 3, name: "text", required: true}, {type: 4, name: "speed (-10 - 10)", required: false}, {type: 3, name: "language code", required: false}],
+                  execute: async (e, t) => {
+                    let language = "en-us";
+                    let speed = 1;
+                    if (e["speed (-10 - 10)"]) speed = e["speed (-10 - 10)"][0].text;
+                    if (e["language code"]) language = e["language code"][0].text;
+
+                    await fetch(`https://api.voicerss.org/?key=${ttsApiKey}&hl=${language}&src=${getAllMessageParts(e.text)}&r=${speed}`)
+                      .then(res => res.blob())
+                      .then(blobData => {
+                        BdApi.findModuleByProps('instantBatchUpload').upload(t.channel.id, blobData, 0, "irrelevant text", false, "tts.wav");
+                      })
+                      .catch(err => {
+                        BdApi.showToast("An error occured", {type: "error"});
+                        console.log(err);
+                      });
                   }
                 }
               ]
@@ -988,6 +1024,32 @@ const Selfbot = (() => {
                 }
               ]
             }, {
+              name: "Autism",
+              icon: {
+                path: `M6.5 1.75a.25.25 0 01.25-.25h2.5a.25.25 0 01.25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675a.75.75 0 10-1.492.15l.66 6.6A1.75 1.75 0 005.405 15h5.19c.9 0 1.652-.681 1.741-1.576l.66-6.6a.75.75 0 00-1.492-.149l-.66 6.6a.25.25 0 01-.249.225h-5.19a.25.25 0 01-.249-.225l-.66-6.6z`,
+                height: 24,
+                width: 24,
+                viewBox: "0 0 15 19"
+              },
+              commands: [
+                {
+                  name: "crash",
+                  description: "Sends a discord crash gif/video",
+                  options: [],
+                  execute: async (e, t) => {
+                    
+
+                    
+                    BdApi.showToast("idk what the script is lmao", {type: "error"});
+                    
+
+                      
+                    
+                  }
+                }
+              ]
+            },
+            {
               name: "Backup",
               icon: {
                 path: `M17.927,5.828h-4.41l-1.929-1.961c-0.078-0.079-0.186-0.125-0.297-0.125H4.159c-0.229,0-0.417,0.188-0.417,0.417v1.669H2.073c-0.229,0-0.417,0.188-0.417,0.417v9.596c0,0.229,0.188,0.417,0.417,0.417h15.854c0.229,0,0.417-0.188,0.417-0.417V6.245C18.344,6.016,18.156,5.828,17.927,5.828 M4.577,4.577h6.539l1.231,1.251h-7.77V4.577z M17.51,15.424H2.491V6.663H17.51V15.424z`,
@@ -1193,6 +1255,7 @@ const Selfbot = (() => {
             if (changes.addedNodes[0].className.includes("outerWrapper")) {
               // load icons on left
               const listOfCategories = `div[aria-expanded="false"] > div > div:nth-of-type(2) > div > div > div > div > div`;
+              // const listOfCategories = `main[aria-label$=" (channel)"] > form > div > div > div > div:nth-of-type(2) > div > div > div > div > div`;
               modules.slice().reverse().forEach(module => {
                 const categorySVG = `${listOfCategories} > div > div[aria-label="${module.name}"] > div > svg`;
                 document.querySelector(categorySVG).setAttribute("height", module.icon.height);
