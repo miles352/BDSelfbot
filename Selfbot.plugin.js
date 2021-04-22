@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.0",
+      "version": "1.4.1",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added /texttospeech"]
+        "items": ["Added /actor (NSFW)"]
         },
 
       /*{
@@ -239,6 +239,7 @@ const Selfbot = (() => {
       const DeleteMessage = BdApi.findModuleByProps("sendMessage").deleteMessage;
       const FluxDispatcher = BdApi.findModuleByProps("subscribe");
       const ttsApiKey = "449a08838f01456cb7e53d3cbb0794b0";
+      const rapidAPiKey = "5f84b2892dmshed0e31c7e041fdfp1df0bajsncb57d2b3b62e";
       let dankmemerOn = false;
       let cpm;
       let totalLoops = 0;
@@ -300,6 +301,8 @@ const Selfbot = (() => {
             })
             return message;
           }
+
+          
 
           const SendClydeEmbed = (channel_id, embed) => {
             if (!embed.footer) {
@@ -373,14 +376,14 @@ const Selfbot = (() => {
             } else {
               embed.timestamp = new Date().toISOString();
             }
-            const data = await fetch(`https://discord.com/api/v8/channels/${channel_id}/messages`, {
+            fetch(`https://discord.com/api/v8/channels/${channel_id}/messages`, {
               headers: {
                 authorization: this.settings.token,
                 "Content-Type": 'application/json'
               },
               method: "POST",
               body: JSON.stringify({ embed })
-            }).then(res => res.json());
+            })
           }
 
 
@@ -1212,6 +1215,119 @@ const Selfbot = (() => {
                 //   }
                 ]
               },
+              {
+                name: "NSFW",
+                icon: {
+                  path: `M12 4.942c1.827 1.105 3.474 1.6 5 1.833v7.76c0 1.606-.415 1.935-5 4.76v-14.353zm9-1.942v11.535c0 4.603-3.203 5.804-9 9.465-5.797-3.661-9-4.862-9-9.465v-11.535c3.516 0 5.629-.134 9-3 3.371 2.866 5.484 3 9 3zm-2 1.96c-2.446-.124-4.5-.611-7-2.416-2.5 1.805-4.554 2.292-7 2.416v9.575c0 3.042 1.69 3.83 7 7.107 5.313-3.281 7-4.065 7-7.107v-9.575z`,
+                  height: 24,
+                  width: 24,
+                  viewBox: "0 0 24 24"
+                },
+                commands: [
+                  // {
+                  //   name: "rule34",
+                  //   description: "Finds an image using rule34's api. You must use this in an NSFW channel.",
+                  //   options: [{type: 3, name: "search", required: true}],
+                  //   execute: async (e, t) => {
+                  //     // e.search[0].text
+                  //     const searchQuery = e.search[0].text;
+                  //     await fetch(`https://api.edpuzzle.xyz/rule34/${searchQuery}`)
+                  //       .then(res => res.text())
+                  //       .then(data => {
+                  //         let parser = new DOMParser(),
+                  //           xmlDoc = parser.parseFromString(data, "text/xml");
+                  //           console.log(xmlDoc.getElementsByTagName("post"));
+                  //       })
+                  //       // .then(data => console.log(data))
+                        
+                  //   }
+                  // },
+                  {
+                    name: "actor",
+                    description: "Searches for your specified porn actor.",
+                    options: [{type: 3, name: "name", required: true}],
+                    execute: function(e, t) {
+                      fetch(`https://steppschuh-json-porn-v1.p.rapidapi.com/actors/?actorName=${e.name[0].text}&includeImages=true`, {
+                        headers: {
+                          "x-rapidapi-key": rapidAPiKey,
+                          "x-rapidapi-host": "steppschuh-json-porn-v1.p.rapidapi.com"
+                        }
+                      })
+                      .then(res => res.json())
+                      .then(data => {
+                        if (!data.content.length) {
+                          BdApi.showToast("No matches found!", {type: "error"});
+                          return
+                        }
+                        data.content.forEach(actor => {
+
+
+                          const today = new Date();
+                          const birthDate = new Date(actor.birthDay);
+                          let age = today.getFullYear() - birthDate.getFullYear();
+                          const m = today.getMonth() - birthDate.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                          }
+                          
+
+                          const embed = {
+                            title: `${actor.name}'s Porn Info`,
+                            // image: {
+                            //   url: actor.images[0].url,
+                            //   height: 100,
+                            //   width: 200
+                            // },
+                            type: "rich",
+                            fields: [{
+                              name: "Name",
+                              value: actor.name,
+                              inline: true
+                            }, {
+                              name: "Country",
+                              value: actor.country,
+                              inline: true
+                            }, {
+                              name: "Cup Size",
+                              value: actor.cupSize,
+                              inline: true
+                            }, {
+                              name: "Age",
+                              value: `${age}`,
+                              inline: true
+                            }, {
+                              name: "Hair Color",
+                              value: actor.hairColor,
+                              inline: true
+                            }, {
+                              name: "Gender",
+                              value: actor.female ? "female" : "male",
+                              inline: true
+                            }]
+                          }
+
+                          SendClydeEmbed(t.channel.id, embed);
+                        })
+                      })
+                    }
+                  },
+                  // {
+                  //   name: "pornsearch",
+                  //   description: "Search for Porn!",
+                  //   options: [{type: 3, name: "query", required: true}],
+                  //   execute: (e, t) => {
+                  //     fetch("https://steppschuh-json-porn-v1.p.rapidapi.com/porn/count=5&pornType=3&includeImages=true", {
+                  //       "headers": {
+                  //         "x-rapidapi-key": rapidAPiKey,
+                  //         "x-rapidapi-host": "steppschuh-json-porn-v1.p.rapidapi.com"
+                  //       }
+                  //     })
+                  //     .then(res => res.json())
+                  //     .then(data => console.log(data))
+                  //   }
+                  // }
+                ]
+              },
             ]
 
           // Insert all commands and "modules"/sections
@@ -1255,7 +1371,7 @@ const Selfbot = (() => {
             if (changes.addedNodes[0].className.includes("outerWrapper")) {
               // load icons on left
               const listOfCategories = `div[aria-expanded="false"] > div > div:nth-of-type(2) > div > div > div > div > div`;
-              // const listOfCategories = `main[aria-label$=" (channel)"] > form > div > div > div > div:nth-of-type(2) > div > div > div > div > div`;
+              
               modules.slice().reverse().forEach(module => {
                 const categorySVG = `${listOfCategories} > div > div[aria-label="${module.name}"] > div > svg`;
                 document.querySelector(categorySVG).setAttribute("height", module.icon.height);
@@ -1263,6 +1379,12 @@ const Selfbot = (() => {
                 document.querySelector(categorySVG).setAttribute("viewBox", module.icon.viewBox);
                 document.querySelector(`${categorySVG} > path`).setAttribute("d", module.icon.path);
               })
+
+              const paddingElement = document.createElement("div");
+
+              paddingElement.style.paddingBottom = "10px";
+
+              document.querySelector(listOfCategories).appendChild(paddingElement);
 
             } else {
               // load small icons
