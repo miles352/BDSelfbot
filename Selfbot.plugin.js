@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.1",
+      "version": "1.4.2",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added /actor (NSFW)"]
+        "items": ["Removed /actor", "Added basic /rule34 might add more later"]
         },
 
       /*{
@@ -1224,108 +1224,42 @@ const Selfbot = (() => {
                   viewBox: "0 0 24 24"
                 },
                 commands: [
-                  // {
-                  //   name: "rule34",
-                  //   description: "Finds an image using rule34's api. You must use this in an NSFW channel.",
-                  //   options: [{type: 3, name: "search", required: true}],
-                  //   execute: async (e, t) => {
-                  //     // e.search[0].text
-                  //     const searchQuery = e.search[0].text;
-                  //     await fetch(`https://api.edpuzzle.xyz/rule34/${searchQuery}`)
-                  //       .then(res => res.text())
-                  //       .then(data => {
-                  //         let parser = new DOMParser(),
-                  //           xmlDoc = parser.parseFromString(data, "text/xml");
-                  //           console.log(xmlDoc.getElementsByTagName("post"));
-                  //       })
-                  //       // .then(data => console.log(data))
-                        
-                  //   }
-                  // },
                   {
-                    name: "actor",
-                    description: "Searches for your specified porn actor.",
-                    options: [{type: 3, name: "name", required: true}],
-                    execute: function(e, t) {
-                      fetch(`https://steppschuh-json-porn-v1.p.rapidapi.com/actors/?actorName=${e.name[0].text}&includeImages=true`, {
-                        headers: {
-                          "x-rapidapi-key": rapidAPiKey,
-                          "x-rapidapi-host": "steppschuh-json-porn-v1.p.rapidapi.com"
-                        }
-                      })
-                      .then(res => res.json())
-                      .then(data => {
-                        if (!data.content.length) {
-                          BdApi.showToast("No matches found!", {type: "error"});
-                          return
-                        }
-                        data.content.forEach(actor => {
+                    name: "rule34",
+                    description: "Finds an image using kurozenzen's API wrapper. You must use this in an NSFW channel.",
+                    options: [{type: 3, name: "tags", required: true}],
+                    execute: async (e, t) => {
+                      // e.search[0].text
+                      const tags = e.tags[0].text;
+                      await fetch(`https://r34-json.herokuapp.com/posts?tags=${tags}`)
+                        .then(res => res.json())
+                        .then(data => {
+                          const post = data.posts[0];
 
-
-                          const today = new Date();
-                          const birthDate = new Date(actor.birthDay);
-                          let age = today.getFullYear() - birthDate.getFullYear();
-                          const m = today.getMonth() - birthDate.getMonth();
-                          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
+                          if (data.count == 0) {
+                            BdApi.showToast("No Results", {type: "error"});
+                            return
+                          } else if (post.type === "video") {
+                            SendMessage(t.channel.id, `${post.sample_url.substring(42)}`);
+                            return
                           }
                           
+                          console.log(post);
 
-                          const embed = {
-                            title: `${actor.name}'s Porn Info`,
-                            // image: {
-                            //   url: actor.images[0].url,
-                            //   height: 100,
-                            //   width: 200
-                            // },
+                          let embed = {
                             type: "rich",
-                            fields: [{
-                              name: "Name",
-                              value: actor.name,
-                              inline: true
-                            }, {
-                              name: "Country",
-                              value: actor.country,
-                              inline: true
-                            }, {
-                              name: "Cup Size",
-                              value: actor.cupSize,
-                              inline: true
-                            }, {
-                              name: "Age",
-                              value: `${age}`,
-                              inline: true
-                            }, {
-                              name: "Hair Color",
-                              value: actor.hairColor,
-                              inline: true
-                            }, {
-                              name: "Gender",
-                              value: actor.female ? "female" : "male",
-                              inline: true
-                            }]
+                            title: "Rule34 Results",
+                            url: `https://rule34.xxx/index.php?page=post&s=view&id=${post.id}`,
+                            image: {
+                              url: post.sample_url
+                            }
                           }
 
-                          SendClydeEmbed(t.channel.id, embed);
+                          SendEmbed(t.channel.id, embed);
                         })
-                      })
+                        
                     }
                   },
-                  // {
-                  //   name: "pornsearch",
-                  //   description: "Search for Porn!",
-                  //   options: [{type: 3, name: "query", required: true}],
-                  //   execute: (e, t) => {
-                  //     fetch("https://steppschuh-json-porn-v1.p.rapidapi.com/porn/count=5&pornType=3&includeImages=true", {
-                  //       "headers": {
-                  //         "x-rapidapi-key": rapidAPiKey,
-                  //         "x-rapidapi-host": "steppschuh-json-porn-v1.p.rapidapi.com"
-                  //       }
-                  //     })
-                  //     .then(res => res.json())
-                  //     .then(data => console.log(data))
-                  //   }
-                  // }
                 ]
               },
             ]
