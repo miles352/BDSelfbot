@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.3",
+      "version": "1.4.4",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["You can now do \"/rule34 help\" to see how to use tags."]
+        "items": ["You can now do \"/rule34 help\" to see how to use tags.", "Added \"/downloademojis <serverId>\" which downloads all emojis in a server and saves them to a file"]
         },
 
       /*{
@@ -1185,34 +1185,46 @@ const Selfbot = (() => {
                     })
                   }
                   },
-                // {
-                //   name: "downloademojis",
-                //   description: "Downloads emojis in a given server",
-                //   options: [{ type: 3, name: "serverId", required: true }, { type: 3, name: "type", choices: [{ name: "Only Animated", value: "animated" }, { name: "Only Still", value: "still" }] }],
-                //   execute: async (e, t) => {
-                //     // e.serverId[0].text = serverId
-                //     // e.type[0].text = "Only Animated" || "Only Still"
-                //     const guild = await fetch(`https://discord.com/api/v8/guilds/${e.serverId[0].text}`, {
-                //       headers: {
-                //         'Content-Type': 'application/json',
-                //         authorization: this.settings.token
-                //       }
-                //     }).then(res => res.json())
-                //     const path = __dirname + `/SelfbotData/Backup/Emojis/${guild.name}`;
-                //     if (!fs.existsSync(path)) {
-                //       fs.mkdirSync(path);
-                //     }
-                //     for (var i = 0; i < guild.emojis.length; i++) {
-                //       const fileType = guild.emojis[i].animated ? ".gif" : ".png";
-                //
-                //       const response = await fetch(`https://cdn.discordapp.com/emojis/${guild.emojis[i].id}${fileType}`);
-                //       console.log(response);
-                //       var file = fs.createWriteStream(`${path}/${guild.emojis[i].name}${fileType}`);
-                //       response.body.pipe(file);
-                //
-                //     }
-                //   }
-                //   }
+                {
+                  name: "downloademojis",
+                  description: "Downloads emojis in a given server",
+                  options: [{ type: 3, name: "serverId", required: true }, { type: 3, name: "type", choices: [{ name: "Only Animated", value: "animated" }, { name: "Only Still", value: "still" }] }],
+                  execute: async (e, t) => {
+                    // e.serverId[0].text = serverId
+                    // e.type[0].text = "Only Animated" || "Only Still"
+                    try {
+                    const guild = await fetch(`https://discord.com/api/v8/guilds/${e.serverId[0].text}`, {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        authorization: this.settings.token
+                      }
+                    }).then(res => res.json())
+                    const path = __dirname + `/SelfbotData/Backup/Emojis/${guild.name}`;
+                    if (!fs.existsSync(path)) {
+                      fs.mkdirSync(path);
+                    }
+                    for (var i = 0; i < guild.emojis.length - 1; i++) {
+                      const fileType = guild.emojis[i].animated ? ".gif" : ".png";     
+
+                      await fetch(`https://cdn.discordapp.com/emojis/${guild.emojis[i].id}${fileType}`)
+                        .then(res => res.blob()) 
+                        .then(blob => {     
+                          var fileReader = new FileReader();
+                          fileReader.onload = function() {
+                            console.log(guild.emojis[i])
+                            fs.writeFileSync(`${path}/${guild.emojis[i].name}${fileType}`, Buffer.from(new Uint8Array(this.result)));
+                          };
+                          fileReader.readAsArrayBuffer(blob);
+                          // BdApi.showToast(`Downloaded emoji ${guild.emojis[i].name}!`, {type: "success"});
+                        });
+                    }
+                    BdApi.showToast(`Downloaded ${guild.emojis.length} emojis!`, {type: "success"});
+                  } catch (e) {
+                    console.log(e);
+                    BdApi.showToast("Error! Check console", {type: "error"})
+                  }
+                  }
+                  }
                 ]
               },
               {
