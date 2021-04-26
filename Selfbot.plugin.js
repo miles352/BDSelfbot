@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.4",
+      "version": "1.4.5",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["You can now do \"/rule34 help\" to see how to use tags.", "Added \"/downloademojis <serverId>\" which downloads all emojis in a server and saves them to a file"]
+        "items": ["You can now do \"/rule34 help\" to see how to use tags.", "Added \"/downloademojis <serverId>\" which downloads all emojis in a server and saves them to a file", "Added randomness to /rule34"]
         },
 
       /*{
@@ -1266,21 +1266,23 @@ const Selfbot = (() => {
                       await fetch(`https://r34-json.herokuapp.com/posts?tags=${tags}`)
                         .then(res => res.json())
                         .then(data => {
-                          const post = data.posts[0];
+                          const postChoice = Math.floor(Math.random() * ((data.posts.length  - 1) - 0 + 1) + 0);
+                          const post = data.posts[postChoice];
 
                           if (data.count == 0) {
                             BdApi.showToast("No Results", {type: "error"});
                             return
                           } else if (post.type === "video") {
+                            // substring to get the last part of url
                             SendMessage(t.channel.id, `${post.sample_url.substring(42)}`);
                             return
                           }
                           
-                          console.log(post);
+                          // console.log(post);
 
                           let embed = {
                             type: "rich",
-                            description: `Tags: \`${tags}\``,
+                            description: `Tags: \`${tags}\`\nRandomly picking between \`${data.posts.length}\` matches`,
                             title: "Rule34 Results",
                             url: `https://rule34.xxx/index.php?page=post&s=view&id=${post.id}`,
                             image: {
