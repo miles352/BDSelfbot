@@ -302,7 +302,11 @@ const Selfbot = (() => {
             return message;
           }
 
-          
+          let style = document.createElement('style');
+          style.setAttribute("id", "toastmod");
+          style.innerHTML = `bd-body .bd-toasts {top: unset;max-height: 29vh;overflow: hidden;}`;
+
+          document.getElementsByTagName('head')[0].appendChild(style);
 
           const SendClydeEmbed = (channel_id, embed) => {
             if (!embed.footer) {
@@ -1215,7 +1219,7 @@ const Selfbot = (() => {
                             fs.writeFileSync(`${path}/${guild.emojis[i].name}${fileType}`, Buffer.from(new Uint8Array(this.result)));
                           };
                           fileReader.readAsArrayBuffer(blob);
-                          // BdApi.showToast(`Downloaded emoji ${guild.emojis[i].name}!`, {type: "success"});
+                          BdApi.showToast(`Downloaded emoji ${guild.emojis[i].name}!`, {type: "success"});
                         });
                     }
                     BdApi.showToast(`Downloaded ${guild.emojis.length} emojis!`, {type: "success"});
@@ -1323,6 +1327,7 @@ const Selfbot = (() => {
           Patcher.unpatchAll();
           CommandsModule.length = 8;
           SectionModule.length = 1;
+          document.getElementById("toastmod").remove();
           // // Unsubscribe.
           FluxDispatcher.unsubscribe("MESSAGE_CREATE", messageSent);
         }
