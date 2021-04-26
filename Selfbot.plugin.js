@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.2",
+      "version": "1.4.3",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Removed /actor", "Added basic /rule34 might add more later"]
+        "items": ["You can now do \"/rule34 help\" to see how to use tags."]
         },
 
       /*{
@@ -1226,11 +1226,27 @@ const Selfbot = (() => {
                 commands: [
                   {
                     name: "rule34",
-                    description: "Finds an image using kurozenzen's API wrapper. You must use this in an NSFW channel.",
+                    description: "Finds an image using kurozenzen's API wrapper. Type \"help\" in the tags for help.",
                     options: [{type: 3, name: "tags", required: true}],
                     execute: async (e, t) => {
-                      // e.search[0].text
+                      //https://github.com/kurozenzen/r34-json-api#readme
                       const tags = e.tags[0].text;
+
+                      if (tags === "help") {
+                        const embed = {
+                          title: "Rule34 Tags Help",
+                          type: "rich",
+                          provider: {
+                            name: "See docs here",
+                            url: "https://github.com/kurozenzen/r34-json-api#readme"
+                          },
+                          description: "**Simple tag:** \`helltaker\` or \`hentai\`.\n**Wildcards:** \`*_hair\` will match \`blue_hair\`, \`red_hair\` and a bunch of other tags.\n**Prefixes:** \`score\` is the most useful, others are \`source\`, \`width\`, \`height\`, \`user\`\n\`score:>100\` will match posts with more than 100 likes.\nsame works for the others as well"
+                        }
+
+                        SendClydeEmbed(t.channel.id, embed);
+                        return
+                      }
+
                       await fetch(`https://r34-json.herokuapp.com/posts?tags=${tags}`)
                         .then(res => res.json())
                         .then(data => {
@@ -1248,6 +1264,7 @@ const Selfbot = (() => {
 
                           let embed = {
                             type: "rich",
+                            description: `Tags: \`${tags}\``,
                             title: "Rule34 Results",
                             url: `https://rule34.xxx/index.php?page=post&s=view&id=${post.id}`,
                             image: {
