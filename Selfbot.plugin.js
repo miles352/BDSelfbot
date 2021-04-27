@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.5",
+      "version": "1.4.6",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["You can now do \"/rule34 help\" to see how to use tags.", "Added \"/downloademojis <serverId>\" which downloads all emojis in a server and saves them to a file", "Added randomness to /rule34"]
+        "items": ["Added /cloneserver command"]
         },
 
       /*{
@@ -1192,7 +1192,7 @@ const Selfbot = (() => {
                 {
                   name: "downloademojis",
                   description: "Downloads emojis in a given server",
-                  options: [{ type: 3, name: "serverId", required: true }, { type: 3, name: "type", choices: [{ name: "Only Animated", value: "animated" }, { name: "Only Still", value: "still" }] }],
+                  options: [{ type: 3, name: "serverId", required: true }],
                   execute: async (e, t) => {
                     // e.serverId[0].text = serverId
                     // e.type[0].text = "Only Animated" || "Only Still"
@@ -1206,6 +1206,8 @@ const Selfbot = (() => {
                     const path = __dirname + `/SelfbotData/Backup/Emojis/${guild.name}`;
                     if (!fs.existsSync(path)) {
                       fs.mkdirSync(path);
+                      fs.mkdirSync(`${path}/png`);
+                      fs.mkdirSync(`${path}/gif`);
                     }
                     for (var i = 0; i < guild.emojis.length - 1; i++) {
                       const fileType = guild.emojis[i].animated ? ".gif" : ".png";     
@@ -1215,11 +1217,10 @@ const Selfbot = (() => {
                         .then(blob => {     
                           var fileReader = new FileReader();
                           fileReader.onload = function() {
-                            console.log(guild.emojis[i])
-                            fs.writeFileSync(`${path}/${guild.emojis[i].name}${fileType}`, Buffer.from(new Uint8Array(this.result)));
+                            fs.writeFileSync(`${path}/${fileType.substring(1)}/${guild.emojis[i].name}${fileType}`, Buffer.from(new Uint8Array(this.result)));
                           };
                           fileReader.readAsArrayBuffer(blob);
-                          BdApi.showToast(`Downloaded emoji ${guild.emojis[i].name}!`, {type: "success"});
+                          BdApi.showToast(`Downloaded emoji ${guild.emojis[i].name}!`, {type: "info"});
                         });
                     }
                     BdApi.showToast(`Downloaded ${guild.emojis.length} emojis!`, {type: "success"});
@@ -1228,6 +1229,77 @@ const Selfbot = (() => {
                     BdApi.showToast("Error! Check console", {type: "error"})
                   }
                   }
+                  },
+                  {
+                    name: "cloneserver", 
+                    description: "Clones an entire server including roles, channels, permissions, etc.", 
+                    options: [{ type: 3, name: "serverId", required: true }],
+                    execute: async (e, t) => {
+                      BdApi.showToast("Starting clone process...", {type: "info"});
+
+                      const guild = await fetch(`https://discord.com/api/v8/guilds/${e.serverId[0].text}`, {
+                        headers: {
+                          'Content-Type': 'application/json',
+                          authorization: this.settings.token
+                        }
+                      })
+                      .then(res => res.json())
+
+                      await wait(2000);
+
+                      const guildChannels = await fetch(`https://discord.com/api/v8/guilds/${e.serverId[0].text}/channels`, {
+
+                        headers: {
+                          'Content-Type': 'application/json',
+                          authorization: this.settings.token
+                        }
+                      })
+                      .then(res => res.json())
+
+                      guildChannels.forEach(channel => {
+                        // in case they have server boosted bitrate may be higher
+                        if (channel?.bitrate > 96000) channel.bitrate = 96000;
+                        // changes announcement channels to normal text
+                        if (channel?.type === 5) channel.type = 0;
+                        // changes podcast channels to voice channel and sets user limit to infinite instead of 1000
+                        if (channel?.type === 13) {
+                          channel.type = 2;
+                          channel.user_limit = 0;
+                        }
+                        
+                      })
+
+                      const categories = guildChannels.filter(channel => channel.type === 4);
+                      const everythingElse = guildChannels.filter(channel => channel.type !== 4);
+
+                      // get server icon
+                      // const icon = await fetch(`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}`)
+                      //                         .then(res => res.)
+
+
+                      const newGuild = {
+                        name: guild.name,
+                        // icon: icon,
+                        roles: guild.roles,
+                        channels: categories.concat(everythingElse)
+                      }
+
+                      console.log(newGuild);
+
+                      await wait(2000);
+
+                      fetch(`https://discord.com/api/v8/guilds`, {
+                        method: "POST",
+                        headers: {
+                          authorization: this.settings.token,
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(newGuild)
+                      })
+                      .then(res => BdApi.showToast("Complete! You should have a new server", {type: "success"}))
+                      .catch(err => BdApi.showToast("Error! Check console", {type: "error"}))
+                      
+                    }
                   }
                 ]
               },
