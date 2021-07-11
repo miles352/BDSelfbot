@@ -21,7 +21,7 @@ const Selfbot = (() => {
         "name": "jefff",
         "discord_id": "769415977439592468"
     }],
-      "version": "1.4.7",
+      "version": "1.4.8",
       "description": "Custom slash commands and an advanced dank memer farmer bot.",
       "github": "",
       "github_raw": "https://raw.githubusercontent.com/miles352/BDSelfbot/main/Selfbot.plugin.js"
@@ -29,7 +29,7 @@ const Selfbot = (() => {
     "changelog": [
       {
         "title": "New Stuff",
-        "items": ["Added /spam command :troll:"]
+        "items": ["Commented out commands that are not finished/don't work", "Spam was reworked and is better now"]
         },
 
       /*{
@@ -247,6 +247,7 @@ const Selfbot = (() => {
       const ttsApiKey = "449a08838f01456cb7e53d3cbb0794b0";
       const rapidAPiKey = "5f84b2892dmshed0e31c7e041fdfp1df0bajsncb57d2b3b62e";
       let dankmemerOn = false;
+      let spamOn = false;
       let cpm;
       let totalLoops = 0;
       let totalCoins = 0;
@@ -297,6 +298,9 @@ const Selfbot = (() => {
 
           function getAllMessageParts(messageParts) {
             let message = "";
+            if (messageParts === undefined) {
+              return messageParts;
+            }
             messageParts.forEach(messagePart => {
               if (messagePart.type === "text") {
                 message += messagePart.text
@@ -306,6 +310,8 @@ const Selfbot = (() => {
                 message += messagePart.name
               } else if (messagePart.type === "customEmoji") {
                 message += messagePart.animated ? `<a${messagePart.name}${messagePart.emojiId}> ` : `<${messagePart.name}${messagePart.emojiId}> `;
+              } else {
+                message += messagePart.text;
               }
             })
             return message;
@@ -558,64 +564,88 @@ const Selfbot = (() => {
                       });
                   }
                 },
-                {
-                  name: "ytconverter",
-                  description: "Converts a youtube URL into a .mp3 or .mp4 Default is an mp4",
-                  options: [{name: "URL", type: "3", required: true}, {name: "format", type: "3", required: false, choices: [{name: "mp3", value: "mp3"}, {name: "mp4", value: "mp4"}]}],
-                  execute: async (e, t) => {
-                    const format = e.format?.[0].text ? e.format[0].text : "mp4";
-                    const URL = e.URL[0].text;
+                // {
+                //   name: "ytconverter",
+                //   description: "Converts a youtube URL into a .mp3 or .mp4 Default is an mp4",
+                //   options: [{name: "URL", type: "3", required: true}, {name: "format", type: "3", required: false, choices: [{name: "mp3", value: "mp3"}, {name: "mp4", value: "mp4"}]}],
+                //   execute: async (e, t) => {
+                //     const format = e.format?.[0].text ? e.format[0].text : "mp4";
+                //     const URL = e.URL[0].text;
 
                     
-                    fetch(URL)
-                      .then(res => console.log(res))
-                  }
-                }, 
-                {
-                  name: "report",
-                  description: "Makes it easier to report a user/server.",
-                  options: [],
-                  execute: function(e, t) {
-                    function change(...params) {
-                      console.log(params);
-                    }
+                //     fetch(URL)
+                //       .then(res => console.log(res))
+                //   }
+                // }, 
+                // {
+                //   name: "report",
+                //   description: "Makes it easier to report a user/server.",
+                //   options: [],
+                //   execute: function(e, t) {
+                //     function change(...params) {
+                //       console.log(params);
+                //     }
 
-                    try {
-                      Modals.showModal("Report Menu", ZLibrary.ReactTools.createWrappedElement([
-                        new Settings.Textbox("Email Address", "This is the email where discord will reply to you.", "", change, {placeholder: "example@example.com"}).getElement(),
-                        new Settings.Dropdown("Report Category", "", 0, [{label: "Choose a topic to report", value: 0}, {label: "Report abuse or harrassment", value: 1}, {label: "Report spam", value: 2}, {label: "Report other issue", value: 3}, {label: "Appeals, age update, other questions", value: 4}], change).getElement()
-                      ], {
-                        confirmButtonColor: "blue"
-                      }))
-                    } catch(e) {
-                      console.log(e)
-                    }
+                //     try {
+                //       Modals.showModal("Report Menu", ZLibrary.ReactTools.createWrappedElement([
+                //         new Settings.Textbox("Email Address", "This is the email where discord will reply to you.", "", change, {placeholder: "example@example.com"}).getElement(),
+                //         new Settings.Dropdown("Report Category", "", 0, [{label: "Choose a topic to report", value: 0}, {label: "Report abuse or harrassment", value: 1}, {label: "Report spam", value: 2}, {label: "Report other issue", value: 3}, {label: "Appeals, age update, other questions", value: 4}], change).getElement()
+                //       ], {
+                //         confirmButtonColor: "blue"
+                //       }))
+                //     } catch(e) {
+                //       console.log(e)
+                //     }
                     
 
-                    // const TextInput = BdApi.findModuleByDisplayName('TextInput');
-                    // const FormTitle = BdApi.findModuleByDisplayName('FormTitle');
-                    // BdApi.showConfirmationModal("Title", [
-                    //   BdApi.React.createElement(FormTitle, {
-                    //     children: "Email Address"
-                    //   }),
-                    //   BdApi.React.createElement(TextInput, {
-                    //     onChange: change,
-                    //     placeholder: "you@example.com",
+                //     // const TextInput = BdApi.findModuleByDisplayName('TextInput');
+                //     // const FormTitle = BdApi.findModuleByDisplayName('FormTitle');
+                //     // BdApi.showConfirmationModal("Title", [
+                //     //   BdApi.React.createElement(FormTitle, {
+                //     //     children: "Email Address"
+                //     //   }),
+                //     //   BdApi.React.createElement(TextInput, {
+                //     //     onChange: change,
+                //     //     placeholder: "you@example.com",
                         
-                    //   })
-                    // ]);
-                  }
-                },
+                //     //   })
+                //     // ]);
+                //   }
+                // },
                  {
                    name: "spam",
-                   description: "Spams a message at an interval",
-                   options: [{name: "message", type: 3, required: true}, {name: "interval", type: 4, description: "Interval in seconds", required: true}],
+                   description: "Spams a message at an interval. Message is required. Leaving amount blank will cause it to run forever. Run it with no params to end spam if send to infinite.",
+                   options: [{name: "message", type: 3, required: false}, {name: "interval", type: 4, description: "Interval in seconds", required: false}, {name: "amount", type: 4, description: "Amount of messages to send. Put zero to send forever, and run spam again to stop it."}],
                    execute: function(e, t) {
-                    const interval = e.interval[0].text;
-                    const message = getAllMessageParts(e.message);
-                    setInterval(() => {
-                      SendMessage(t.channel.id, message)
-                    }, interval * 1000)
+
+                    
+
+                    if (getAllMessageParts(e.message) === undefined) {
+                      spamOn = false;
+                      return
+                    }
+
+                    let timeout = e.interval[0].text;    
+                    let amount = e.amount[0].text;
+                    let message = getAllMessageParts(e.message);
+
+                    // defaults
+
+                    if (timeout === undefined) timeout = 0.5;
+                    if (amount === undefined) amount = 999999;
+                    
+                    
+
+                    spamOn = !spamOn;
+
+                    let iterator = 0;
+                    const interval = setInterval(() => {
+                      SendMessage(t.channel.id, message);
+                      iterator++;
+                      if (!spamOn || (iterator >= amount)) {
+                        clearInterval(interval);
+                      }
+                    }, timeout * 1000);
                    }
                  }
               ]
@@ -949,7 +979,7 @@ const Selfbot = (() => {
                         if (embed.description.includes("won")) {
                           tempMoney += getMoney(embed.description);
                         } else if (embed.description.includes("lost")) {
-                          tempMoney -= 10;
+                          tempMoney -= 50;
                         }
                       } else if (embed.footer.text.includes("snakeeyes")) {
                         FluxDispatcher.subscribe("MESSAGE_UPDATE", messageUpdate);
@@ -958,7 +988,7 @@ const Selfbot = (() => {
                           if (args[0].message.channel_id != t.channel.id) return;
 
                           if (args[0].message.embeds[0].description.includes("lost")) {
-                            tempMoney -= 10;
+                            tempMoney -= 50;
                             FluxDispatcher.unsubscribe("MESSAGE_UPDATE", messageUpdate);
                           } else if (args[0].message.embeds[0].description.includes("won")) {
                             tempMoney += getMoney(args[0].message.embeds[0].description);
@@ -1033,11 +1063,11 @@ const Selfbot = (() => {
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.gamble) {
-                        SendMessage(t.channel.id, "pls gamble 10");
+                        SendMessage(t.channel.id, "pls gamble 50");
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.snakeeyes) {
-                        SendMessage(t.channel.id, "pls snakeeyes 10");
+                        SendMessage(t.channel.id, "pls snakeeyes 50");
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.slots) {
@@ -1045,7 +1075,7 @@ const Selfbot = (() => {
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.blackjack) {
-                        SendMessage(t.channel.id, "pls bj 10");
+                        SendMessage(t.channel.id, "pls bj 50");
                         await wait(timeToWait);
                       }
                       if (this.settings.dankmemer.deposit) {
@@ -1133,7 +1163,7 @@ const Selfbot = (() => {
                     const shownMsg = getAllMessageParts(e.shown);
                     const hiddenMsg = getAllMessageParts(e.hidden);
 
-                    const messageToSend = shownMsg + decodeURIComponent('||\u200b||').repeat(200) + hiddenMsg;
+                    const messageToSend = shownMsg + " " + decodeURIComponent('||\u200b||').repeat(200) + hiddenMsg;
 
                     SendMessage(t.channel.id, messageToSend);
                   }
@@ -1521,6 +1551,7 @@ const Selfbot = (() => {
                 id: `-${CommandsModule.length + 1}`,
                 applicationId: `-${SectionModule.length}`,
                 type: 0,
+                target: 1,
                 name: command.name,
                 description: command.description,
                 options: command.options,
